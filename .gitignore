@@ -1,0 +1,38 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Data files & backups (never commit)
+/backend/src/data/*.csv
+/backend/src/data/*.csv.backup
+/backend/src/data/*.backup
+/backend/src/uploads/
+
+# Prisma
+.prisma/
+*.db
+*.sqlite
+
+# Logs
+logs/
+*.log
+
+# OS / Editor
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

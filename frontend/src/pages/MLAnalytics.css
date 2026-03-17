@@ -1,0 +1,269 @@
+.ml-analytics {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.ml-analytics-wrapper {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  margin-left: 280px;
+  width: calc(100% - 280px);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 2rem;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.period-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.btn-train {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.btn-train:hover {
+  background: #2563eb;
+}
+
+.btn-train:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.model-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.model-metrics-card {
+  background: white;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border: 1px solid #e5e7eb;
+}
+
+.model-metrics-card h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  color: #475569;
+}
+
+.model-metrics-body {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.model-metrics-body div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.model-metrics-body span {
+  color: #64748b;
+}
+
+.model-metrics-empty {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+.metric-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  display: flex;
+  gap: 1rem;
+  border-left: 4px solid;
+}
+
+.metric-card.metric-green {
+  border-left-color: #22c55e;
+}
+
+.metric-card.metric-red {
+  border-left-color: #ef4444;
+}
+
+.metric-card.metric-blue {
+  border-left-color: #3b82f6;
+}
+
+.metric-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.metric-green .metric-icon {
+  background: #dcfce7;
+  color: #22c55e;
+}
+
+.metric-red .metric-icon {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.metric-blue .metric-icon {
+  background: #dbeafe;
+  color: #3b82f6;
+}
+
+.metric-content h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.metric-trend {
+  font-size: 0.9rem;
+  margin: 0.25rem 0;
+}
+
+.metric-accuracy {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.predictions-container {
+  display: grid;
+  gap: 2rem;
+}
+
+.prediction-table-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.prediction-table-card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.prediction-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.prediction-table th,
+.prediction-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.prediction-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #475569;
+}
+
+.prediction-table tr:hover {
+  background: #f8fafc;
+}
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: #3b82f6;
+}
+
+.loading-spinner svg {
+  animation: spin 2s linear infinite;
+}
+
+.error-message {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.btn-retry {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-retry:hover {
+  background: #dc2626;
+}

@@ -1,0 +1,26 @@
+{
+  "models": {
+    "expenses": {
+      "status": "success",
+      "data_points": 91,
+      "date_range": "2025-01-01 to 2026-03-16",
+      "metrics": {
+        "mape": 715.78,
+        "rmse": 13602.91,
+        "test_points": 19
+      },
+      "updated_at": "2026-03-16T17:02:24.533045"
+    },
+    "sales": {
+      "status": "success",
+      "data_points": 379,
+      "date_range": "2025-01-01 to 2026-02-07",
+      "metrics": {
+        "mape": 67.18,
+        "rmse": 696104.95,
+        "test_points": 76
+      },
+      "updated_at": "2026-03-16T17:02:24.015225"
+    }
+  }
+}

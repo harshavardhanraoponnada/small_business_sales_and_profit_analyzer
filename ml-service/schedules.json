@@ -1,0 +1,15 @@
+{
+  "4dc130c9-40d6-4f6e-8753-57b1e48d01f1": {
+    "id": "4dc130c9-40d6-4f6e-8753-57b1e48d01f1",
+    "report_type": "summary",
+    "format": "pdf",
+    "frequency": "daily",
+    "recipients": [
+      "71909018@sasi.ac.in"
+    ],
+    "enabled": true,
+    "created_at": "2026-02-09T17:34:05.797545",
+    "last_run": null,
+    "next_run": null
+  }
+}
