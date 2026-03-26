@@ -1,5 +1,8 @@
 from flask import Blueprint, request, jsonify
+import pandas as pd
+import os
 from services.forecast_service import ForecastService
+from utils.database_loader import DatabaseLoader
 from utils.data_loader import DataLoader
 from utils.model_registry import update_model_entry, load_registry
 from config.settings import Config
@@ -7,21 +10,43 @@ from config.settings import Config
 predictions_bp = Blueprint('predictions', __name__, url_prefix='/api/predictions')
 forecast_service = ForecastService(Config.MODELS_DIR)
 
-def _ensure_models_trained():
-    """Train models if possible and return results."""
-    results = {}
+# Initialize database loader with PostgreSQL connection
+DATABASE_URL = os.getenv('DATABASE_URL')
+db_loader = DatabaseLoader(DATABASE_URL) if DATABASE_URL else None
 
+def _load_data_from_database():
+    """Load data from PostgreSQL database (preferred) or fallback to CSV"""
+    try:
+        if db_loader:
+            sales_data = db_loader.load_sales_data()
+            expenses_data = db_loader.load_expenses_data()
+            return sales_data, expenses_data, 'database'
+    except Exception as e:
+        print(f"Database loading failed: {e}, falling back to CSV")
+    
+    # Fallback to CSV if database not available
     sales_data = DataLoader.load_sales_data(Config.DATA_DIR)
+    expenses_data = DataLoader.load_expenses_data(Config.DATA_DIR)
+    return sales_data, expenses_data, 'csv'
+
+def _ensure_models_trained():
+    """Train models using latest data from database or CSV"""
+    results = {}
+    
+    sales_data, expenses_data, source = _load_data_from_database()
+    print(f"Loaded data from {source}")
+    
     if DataLoader.validate_data(sales_data, Config.MIN_DATA_POINTS):
         results['sales'] = forecast_service.train_model(sales_data, 'sales')
+        results['sales']['source'] = source
     else:
-        results['sales'] = {'status': 'error', 'message': 'Insufficient sales data'}
+        results['sales'] = {'status': 'error', 'message': 'Insufficient sales data', 'source': source}
 
-    expenses_data = DataLoader.load_expenses_data(Config.DATA_DIR)
     if DataLoader.validate_data(expenses_data, Config.MIN_DATA_POINTS):
         results['expenses'] = forecast_service.train_model(expenses_data, 'expenses')
+        results['expenses']['source'] = source
     else:
-        results['expenses'] = {'status': 'error', 'message': 'Insufficient expenses data'}
+        results['expenses'] = {'status': 'error', 'message': 'Insufficient expenses data', 'source': source}
 
     return results
 
@@ -31,9 +56,16 @@ def train_models():
     try:
         results = _ensure_models_trained()
 
-        # Update registry with metrics
+        # Update registry with metrics - use database loader for evaluation data
         if results.get('sales', {}).get('status') == 'success':
-            sales_data = DataLoader.load_sales_data(Config.DATA_DIR)
+            try:
+                if db_loader:
+                    sales_data = db_loader.load_sales_data()
+                else:
+                    sales_data = DataLoader.load_sales_data(Config.DATA_DIR)
+            except:
+                sales_data = DataLoader.load_sales_data(Config.DATA_DIR)
+            
             sales_metrics = forecast_service.evaluate_model(sales_data, 'sales')
             update_model_entry(Config.MODELS_DIR, 'sales', {
                 "status": results['sales']['status'],
@@ -43,7 +75,14 @@ def train_models():
             })
 
         if results.get('expenses', {}).get('status') == 'success':
-            expenses_data = DataLoader.load_expenses_data(Config.DATA_DIR)
+            try:
+                if db_loader:
+                    expenses_data = db_loader.load_expenses_data()
+                else:
+                    expenses_data = DataLoader.load_expenses_data(Config.DATA_DIR)
+            except:
+                expenses_data = DataLoader.load_expenses_data(Config.DATA_DIR)
+            
             expenses_metrics = forecast_service.evaluate_model(expenses_data, 'expenses')
             update_model_entry(Config.MODELS_DIR, 'expenses', {
                 "status": results['expenses']['status'],
@@ -138,9 +177,23 @@ def evaluate(forecast_type):
     """Evaluate model performance"""
     try:
         if forecast_type == 'sales':
-            data = DataLoader.load_sales_data(Config.DATA_DIR)
+            # Try to load from database first, then fallback to CSV
+            try:
+                if db_loader:
+                    data = db_loader.load_sales_data()
+                else:
+                    data = DataLoader.load_sales_data(Config.DATA_DIR)
+            except:
+                data = DataLoader.load_sales_data(Config.DATA_DIR)
         elif forecast_type == 'expenses':
-            data = DataLoader.load_expenses_data(Config.DATA_DIR)
+            # Try to load from database first, then fallback to CSV
+            try:
+                if db_loader:
+                    data = db_loader.load_expenses_data()
+                else:
+                    data = DataLoader.load_expenses_data(Config.DATA_DIR)
+            except:
+                data = DataLoader.load_expenses_data(Config.DATA_DIR)
         else:
             return jsonify({'success': False, 'message': 'Invalid forecast type'}), 400
         

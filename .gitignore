@@ -36,6 +36,12 @@ logs/
 /ml-service/coverage/
 /frontend/coverage/
 
+# Debug & temporary test files
+debug_test.py
+test_endpoints.py
+*_test.py.tmp
+*.debug.*
+
 # OS / Editor
 .vscode/
 .idea/
