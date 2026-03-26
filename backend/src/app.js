@@ -49,7 +49,12 @@ app.use((req, res, next) => {
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    instance: process.env.INSTANCE_ID || "local",
+    uptime: process.uptime(),
+  });
 });
 
 app.use("/api/auth", authRoutes);
