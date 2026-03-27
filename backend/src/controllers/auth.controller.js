@@ -70,7 +70,13 @@ exports.forgotPassword = async (req, res) => {
     setOTP(email, otp);
     console.log("📝 OTP stored in memory");
 
-    if (process.env.MAIL_USER && process.env.MAIL_PASS) {
+    const isMailConfigured =
+      !!process.env.MAIL_USER &&
+      !!process.env.MAIL_PASS &&
+      process.env.MAIL_USER !== "your_gmail@gmail.com" &&
+      process.env.MAIL_PASS !== "your_app_password_here";
+
+    if (isMailConfigured) {
       try {
         console.log("📧 Attempting to send OTP email to:", email);
         await sendOTPEmail(email, otp);

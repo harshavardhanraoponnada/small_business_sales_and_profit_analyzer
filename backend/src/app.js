@@ -1,7 +1,10 @@
 const express = require("express");
 const path = require("path");
 const cors = require("cors");
-require("dotenv").config();
+const dotenv = require("dotenv");
+
+dotenv.config();
+dotenv.config({ path: ".env.local", override: true });
 
 const authRoutes = require("./routes/auth.routes");
 const productRoutes = require("./routes/product.routes");
