@@ -11,5 +11,18 @@
     "created_at": "2026-02-09T17:34:05.797545",
     "last_run": null,
     "next_run": null
+  },
+  "b20d42b5-f84a-4468-94e8-94a0247c0d42": {
+    "id": "b20d42b5-f84a-4468-94e8-94a0247c0d42",
+    "report_type": "summary",
+    "format": "pdf",
+    "frequency": "daily",
+    "recipients": [
+      "harsha.vrp.ai@gmail.com"
+    ],
+    "enabled": true,
+    "created_at": "2026-03-27T10:32:48.165349",
+    "last_run": "2026-03-27T10:32:58.488479",
+    "next_run": null
   }
 }

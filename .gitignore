@@ -20,7 +20,13 @@ yarn-error.log*
 /backend/src/data/*.csv
 /backend/src/data/*.csv.backup
 /backend/src/data/*.backup
+/backend/src/data/audit_logs
+/backend/src/data/audit_logs*
 /backend/src/uploads/
+
+# Generated reports (keep folder, ignore artifacts)
+/ml-service/generated_reports/*
+!/ml-service/generated_reports/.gitkeep
 
 # Prisma
 .prisma/
