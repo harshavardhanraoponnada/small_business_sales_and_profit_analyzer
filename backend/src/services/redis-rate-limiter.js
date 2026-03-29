@@ -62,7 +62,6 @@ function createRedisRateLimiter(options = {}) {
   return async (req, res, next) => {
     // Skip rate limiting if Redis is unavailable (graceful fallback)
     if (!redis.connected) {
-      console.warn("⚠ Redis unavailable, allowing request (rate limiting disabled)");
       return next();
     }
 

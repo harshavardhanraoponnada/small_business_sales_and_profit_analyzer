@@ -8,24 +8,24 @@ const auditService = require("../services/audit.service");
 /* ===== LOGIN ===== */
 exports.login = async (req, res) => {
   try {
-    console.log("🔍 Login attempt - req.body:", req.body);
+    console.log("🔐 LOGIN CONTROLLER CALLED");
     const { username, password } = req.body;
-    console.log(`🔍 Extracted: username="${username}", password="${password ? '***' : 'undefined'}"`);
+    console.log("👤 Username:", username, "Password length:", password?.length);
 
     const user = await prisma.user.findUnique({
       where: { username }
     });
 
+    console.log("🔍 User found:", !!user);
     if (!user) {
-      console.log("❌ User not found:", username);
+      console.log("❌ User not found, returning 401");
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    console.log("✅ User found:", username);
     const valid = bcrypt.compareSync(password, user.password_hash);
-    console.log("🔒 Password comparison:", valid ? "✅ MATCH" : "❌ NO MATCH");
-    
+    console.log("✔️ Password valid:", valid);
     if (!valid) {
+      console.log("❌ Password invalid, returning 401");
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
@@ -38,7 +38,7 @@ exports.login = async (req, res) => {
     console.log("✅ Login successful, token generated");
     res.json({ token, role: user.role });
   } catch (error) {
-    console.error("❌ Login error:", error);
+    console.error("❌ Login error:", error.message);
     res.status(500).json({ message: "Login failed" });
   }
 };
