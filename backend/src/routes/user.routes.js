@@ -2,24 +2,41 @@ const express = require("express");
 const router = express.Router();
 
 const auth = require("../middleware/authMiddleware");
-const { readCSV, writeCSV } = require("../services/csv.service");
-const path = require("path");
+const { prisma } = require("../config");
 
-const usersFile = path.join(__dirname, "../data/users.csv");
+// Helper to parse user ID (handle both string and integer IDs from req.user)
+const getUserId = (id) => {
+  if (typeof id === 'string') {
+    return parseInt(id, 10);
+  }
+  return id;
+};
 
 /* ================= GET USER PROFILE ================= */
 router.get("/profile", auth, async (req, res) => {
   try {
-    const users = await readCSV(usersFile);
-    const user = users.find(u => u.id === req.user.id);
+    const userId = getUserId(req.user.id);
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+        reportFrequency: true,
+        reportFormat: true,
+        receiveScheduledReports: true,
+      },
+    });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Exclude password hash from response
-    const { password_hash, ...userProfile } = user;
-    res.json(userProfile);
+    res.json(user);
   } catch (err) {
     console.error("Get profile error:", err);
     res.status(500).json({ message: "Failed to get user profile" });
@@ -30,6 +47,7 @@ router.get("/profile", auth, async (req, res) => {
 router.put("/preferences/reports", auth, async (req, res) => {
   try {
     const { reportFrequency, reportFormat, receiveScheduledReports } = req.body;
+    const userId = getUserId(req.user.id);
 
     // Validate inputs
     const validFrequencies = ["none", "daily", "weekly", "monthly"];
@@ -47,38 +65,36 @@ router.put("/preferences/reports", auth, async (req, res) => {
       });
     }
 
-    // Read users file
-    let users = await readCSV(usersFile);
-    const userIndex = users.findIndex(u => u.id === req.user.id);
-
-    if (userIndex === -1) {
-      return res.status(404).json({ message: "User not found" });
+    // Build update object
+    const updateData = {};
+    if (reportFrequency !== undefined) {
+      updateData.reportFrequency = reportFrequency;
     }
-
-    // Update preferences
-    if (reportFrequency) {
-      users[userIndex].reportFrequency = reportFrequency;
-    }
-    if (reportFormat) {
-      users[userIndex].reportFormat = reportFormat;
+    if (reportFormat !== undefined) {
+      updateData.reportFormat = reportFormat;
     }
     if (receiveScheduledReports !== undefined) {
-      users[userIndex].receiveScheduledReports =
-        receiveScheduledReports ? "true" : "false";
+      updateData.receiveScheduledReports = Boolean(receiveScheduledReports);
     }
 
-    // Write back to CSV
-    await writeCSV(usersFile, users);
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        reportFrequency: true,
+        reportFormat: true,
+        receiveScheduledReports: true,
+      },
+    });
 
     res.json({
       message: "Preferences updated successfully",
-      preferences: {
-        reportFrequency: users[userIndex].reportFrequency,
-        reportFormat: users[userIndex].reportFormat,
-        receiveScheduledReports: users[userIndex].receiveScheduledReports,
-      },
+      preferences: user,
     });
   } catch (err) {
+    if (err.code === 'P2025') {
+      return res.status(404).json({ message: "User not found" });
+    }
     console.error("Update preferences error:", err);
     res.status(500).json({ message: "Failed to update preferences" });
   }
@@ -87,24 +103,29 @@ router.put("/preferences/reports", auth, async (req, res) => {
 /* ================= GET REPORT PREFERENCES ================= */
 router.get("/preferences/reports", auth, async (req, res) => {
   try {
-    const users = await readCSV(usersFile);
-    let user = users.find(u => u.id === req.user.id);
+    const userId = getUserId(req.user.id);
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        reportFrequency: true,
+        reportFormat: true,
+        receiveScheduledReports: true,
+      },
+    });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     // Provide defaults if not set
-    user.reportFrequency = user.reportFrequency || "none";
-    user.reportFormat = user.reportFormat || "pdf";
-    user.receiveScheduledReports =
-      (user.receiveScheduledReports || "false") === "true";
+    const preferences = {
+      reportFrequency: user.reportFrequency || "none",
+      reportFormat: user.reportFormat || "pdf",
+      receiveScheduledReports: Boolean(user.receiveScheduledReports),
+    };
 
-    res.json({
-      reportFrequency: user.reportFrequency,
-      reportFormat: user.reportFormat,
-      receiveScheduledReports: user.receiveScheduledReports,
-    });
+    res.json(preferences);
   } catch (err) {
     console.error("Get preferences error:", err);
     res.status(500).json({ message: "Failed to get preferences" });
@@ -119,24 +140,29 @@ router.get("/:userId/preferences/reports", auth, async (req, res) => {
       return res.status(403).json({ message: "Access denied. Admin only." });
     }
 
-    const users = await readCSV(usersFile);
-    let user = users.find(u => u.id === req.params.userId);
+    const userId = parseInt(req.params.userId, 10);
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        reportFrequency: true,
+        reportFormat: true,
+        receiveScheduledReports: true,
+      },
+    });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     // Provide defaults if not set
-    user.reportFrequency = user.reportFrequency || "none";
-    user.reportFormat = user.reportFormat || "pdf";
-    user.receiveScheduledReports =
-      (user.receiveScheduledReports || "false") === "true";
+    const preferences = {
+      reportFrequency: user.reportFrequency || "none",
+      reportFormat: user.reportFormat || "pdf",
+      receiveScheduledReports: Boolean(user.receiveScheduledReports),
+    };
 
-    res.json({
-      reportFrequency: user.reportFrequency,
-      reportFormat: user.reportFormat,
-      receiveScheduledReports: user.receiveScheduledReports,
-    });
+    res.json(preferences);
   } catch (err) {
     console.error("Get user preferences error:", err);
     res.status(500).json({ message: "Failed to get preferences" });
@@ -151,6 +177,7 @@ router.put("/:userId/preferences/reports", auth, async (req, res) => {
       return res.status(403).json({ message: "Access denied. Admin only." });
     }
 
+    const userId = parseInt(req.params.userId, 10);
     const { reportFrequency, reportFormat, receiveScheduledReports } = req.body;
 
     // Validate inputs
@@ -169,38 +196,36 @@ router.put("/:userId/preferences/reports", auth, async (req, res) => {
       });
     }
 
-    // Read users file
-    let users = await readCSV(usersFile);
-    const userIndex = users.findIndex(u => u.id === req.params.userId);
-
-    if (userIndex === -1) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Update preferences
+    // Build update object
+    const updateData = {};
     if (reportFrequency !== undefined) {
-      users[userIndex].reportFrequency = reportFrequency;
+      updateData.reportFrequency = reportFrequency;
     }
     if (reportFormat !== undefined) {
-      users[userIndex].reportFormat = reportFormat;
+      updateData.reportFormat = reportFormat;
     }
     if (receiveScheduledReports !== undefined) {
-      users[userIndex].receiveScheduledReports =
-        receiveScheduledReports ? "true" : "false";
+      updateData.receiveScheduledReports = Boolean(receiveScheduledReports);
     }
 
-    // Write back to CSV
-    await writeCSV(usersFile, users);
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        reportFrequency: true,
+        reportFormat: true,
+        receiveScheduledReports: true,
+      },
+    });
 
     res.json({
       message: "Preferences updated successfully",
-      preferences: {
-        reportFrequency: users[userIndex].reportFrequency,
-        reportFormat: users[userIndex].reportFormat,
-        receiveScheduledReports: users[userIndex].receiveScheduledReports === "true",
-      },
+      preferences: user,
     });
   } catch (err) {
+    if (err.code === 'P2025') {
+      return res.status(404).json({ message: "User not found" });
+    }
     console.error("Update user preferences error:", err);
     res.status(500).json({ message: "Failed to update preferences" });
   }
