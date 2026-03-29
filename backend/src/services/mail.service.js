@@ -1,14 +1,20 @@
 const nodemailer = require("nodemailer");
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS
-  }
-});
+// Create default transporter
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.MAIL_USER,
+      pass: process.env.MAIL_PASS
+    }
+  });
+};
 
-exports.sendOTPEmail = async (to, otp) => {
+// Allow dependency injection for testing
+let transporter = createTransporter();
+
+const sendOTPEmail = async (to, otp) => {
   if (!to || !otp) {
     throw new Error("Email recipient and OTP are required");
   }
@@ -26,4 +32,19 @@ exports.sendOTPEmail = async (to, otp) => {
     console.error("Mail service error:", error.message);
     throw error;
   }
+};
+
+// For testing - allow transporter override
+const setTransporter = (mockTransporter) => {
+  transporter = mockTransporter;
+};
+
+// For testing - get current transporter
+const getTransporter = () => transporter;
+
+module.exports = {
+  sendOTPEmail,
+  setTransporter,
+  getTransporter,
+  createTransporter
 };
