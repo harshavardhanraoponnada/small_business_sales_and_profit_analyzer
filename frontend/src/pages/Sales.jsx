@@ -51,8 +51,11 @@ const SaleRow = memo(({ sale, themeColors, user }) => (
         fontSize: "0.85rem",
         fontWeight: "600"
       }}>
-        {sale.sale_id}
+        {sale.id.substring(0, 8)}
       </span>
+    </td>
+    <td style={{ padding: "1.25rem", fontWeight: "500" }}>
+      {sale.variant?.variant_name || sale.product?.name || "Unknown"}
     </td>
     <td style={{ padding: "1.25rem", fontWeight: "600" }}>
       {sale.quantity}
@@ -61,24 +64,24 @@ const SaleRow = memo(({ sale, themeColors, user }) => (
       ₹{formatNumber(sale.total)}
     </td>
     <td style={{ padding: "1.25rem" }}>
-      {user.role !== "STAFF" && sale.invoice_id ? (
+      {user.role !== "STAFF" ? (
         <button
           onClick={async () => {
             try {
-              const response = await api.get(`/invoices/${sale.invoice_id}`, {
+              const response = await api.get(`/invoices/${sale.id}`, {
                 responseType: 'blob'
               });
               const url = window.URL.createObjectURL(new Blob([response.data]));
               const link = document.createElement('a');
               link.href = url;
-              link.setAttribute('download', `${sale.invoice_id}.pdf`);
+              link.setAttribute('download', `invoice_${sale.id}.pdf`);
               document.body.appendChild(link);
               link.click();
               link.remove();
               window.URL.revokeObjectURL(url);
             } catch (error) {
               console.error('Error downloading invoice:', error);
-              alert('Failed to download invoice');
+              alert('Failed to download invoice or not available');
             }
           }}
           style={{
@@ -108,7 +111,7 @@ const SaleRow = memo(({ sale, themeColors, user }) => (
         </button>
       ) : (
         <span style={{ color: themeColors.textSecondary, fontSize: "0.9rem" }}>
-          No invoice
+          Not available
         </span>
       )}
     </td>
@@ -138,7 +141,7 @@ export default memo(function Sales() {
   const [error, setError] = useState("");
 
   // Find the currently selected variant object
-  const selectedVariant = useMemo(() => variants.find(v => v.variant_id === variant), [variants, variant]);
+  const selectedVariant = useMemo(() => variants.find(v => v.id === variant), [variants, variant]);
 
   // Calculate summary statistics
   const totalSales = useMemo(() => sales.reduce((sum, sale) => sum + Number(sale.total || 0), 0), [sales]);
@@ -233,7 +236,7 @@ export default memo(function Sales() {
     try {
       setLoading(true);
       await api.post("/sales", {
-        variant_id: selectedVariant.variant_id,
+        variant_id: selectedVariant.id,
         quantity: Number(quantity),
         unit_price: Number(selectedVariant.selling_price)
       });
@@ -386,7 +389,7 @@ export default memo(function Sales() {
                   >
                     <option value="">Select category</option>
                     {categories.map(c => (
-                      <option key={c.category_id} value={c.category_id}>{c.name}</option>
+                      <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>
@@ -424,7 +427,7 @@ export default memo(function Sales() {
                   >
                     <option value="">Select brand</option>
                     {brands.map(b => (
-                      <option key={b.brand_id} value={b.brand_id}>{b.name}</option>
+                      <option key={b.id} value={b.id}>{b.name}</option>
                     ))}
                   </select>
                 </div>
@@ -462,7 +465,7 @@ export default memo(function Sales() {
                   >
                     <option value="">Select model</option>
                     {models.map(m => (
-                      <option key={m.model_id} value={m.model_id}>{m.name}</option>
+                      <option key={m.id} value={m.id}>{m.name}</option>
                     ))}
                   </select>
                 </div>
@@ -500,7 +503,7 @@ export default memo(function Sales() {
                   >
                     <option value="">Select variant</option>
                     {variants.map(v => (
-                      <option key={v.variant_id} value={v.variant_id}>
+                      <option key={v.id} value={v.id}>
                         {v.variant_name} (Stock: {v.stock})
                       </option>
                     ))}
@@ -676,14 +679,15 @@ export default memo(function Sales() {
                       }}>
                         <th style={{ padding: "1.25rem", textAlign: "left", fontWeight: "600" }}><Calendar size={16} /> Date</th>
                         <th style={{ padding: "1.25rem", textAlign: "left", fontWeight: "600" }}><Hash size={16} /> Sale ID</th>
-                        <th style={{ padding: "1.25rem", textAlign: "left", fontWeight: "600", paddingRight: "2rem" }}><Package size={16} /> Quantity</th>
+                        <th style={{ padding: "1.25rem", textAlign: "left", fontWeight: "600" }}><Package size={16} /> Product</th>
+                        <th style={{ padding: "1.25rem", textAlign: "left", fontWeight: "600", paddingRight: "2rem" }}><Smartphone size={16} /> Quantity</th>
                         <th style={{ padding: "1.25rem", textAlign: "left", fontWeight: "600" }}><IndianRupee size={16} /> Total</th>
                         <th style={{ padding: "1.25rem", textAlign: "left", fontWeight: "600", paddingLeft: "2rem" }}><FileText size={16} /> Invoice</th>
                       </tr>
                     </thead>
                     <tbody>
                       {sales.map((sale) => (
-                        <SaleRow key={sale.sale_id} sale={sale} themeColors={themeColors} user={user} />
+                        <SaleRow key={sale.id} sale={sale} themeColors={themeColors} user={user} />
                       ))}
                     </tbody>
                   </table>

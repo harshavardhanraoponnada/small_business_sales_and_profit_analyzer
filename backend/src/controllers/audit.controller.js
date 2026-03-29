@@ -1,11 +1,25 @@
-const path = require("path");
-const { readCSV } = require("../services/csv.service");
+const prisma = require("../services/prisma.service");
 
 exports.getLogs = async (req, res) => {
-  const logs = await readCSV(path.join(__dirname, "../data/audit_logs.csv"));
-  // Filter out logs with invalid timestamps
-  const validLogs = logs.filter(log => !isNaN(new Date(log.timestamp).getTime()));
-  // Sort logs by timestamp in descending order (newer first)
-  validLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  res.json(validLogs);
+  try {
+    const logs = await prisma.auditLog.findMany({
+      include: {
+        user: { select: { username: true } }
+      },
+      orderBy: { created_at: 'desc' }
+    });
+
+    // Transform to match frontend expectations
+    const formattedLogs = logs.map(log => ({
+      timestamp: log.created_at.toISOString(),
+      username: log.username,
+      role: log.user_role,
+      action: log.action,
+      details: log.details
+    }));
+
+    res.json(formattedLogs);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch audit logs", error: error.message });
+  }
 };

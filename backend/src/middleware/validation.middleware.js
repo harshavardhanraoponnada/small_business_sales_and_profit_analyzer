@@ -12,40 +12,39 @@ const saleSchema = Joi.object({
 
 // Variant schema - for adding/updating variants
 const variantSchema = Joi.object({
-  name: Joi.string().trim().min(1).max(100).required(),
-  model_id: Joi.number().integer().positive().required(),
-  specification: Joi.string().max(500).optional().allow(""),
-  price: Joi.number().precision(2).positive().required(),
-  quantity: Joi.number().integer().min(0).required(),
-  cost_price: Joi.number().precision(2).positive().optional(),
-  sku: Joi.string().max(50).optional().allow(""),
-}).unknown(false);
+  variant_name: Joi.string().trim().min(1).max(100).required(),
+  stock: Joi.number().integer().min(0).required(),
+  purchase_price: Joi.number().precision(2).positive().optional(),
+  selling_price: Joi.number().precision(2).positive().optional(),
+  reorder_level: Joi.number().integer().min(0).optional(),
+}).unknown(true);
 
 // Product schema - for adding/updating products
 const productSchema = Joi.object({
   name: Joi.string().trim().min(1).max(100).required(),
-  description: Joi.string().max(500).optional().allow(""),
-  category_id: Joi.number().integer().positive().required(),
-}).unknown(false);
+  brand: Joi.string().trim().min(1).max(100).required(),
+  category_id: Joi.string().required(),
+  stock: Joi.number().integer().min(0).optional(),
+  purchase_price: Joi.number().precision(2).positive().optional(),
+  selling_price: Joi.number().precision(2).positive().optional(),
+}).unknown(true);
 
 // Category schema
 const categorySchema = Joi.object({
   name: Joi.string().trim().min(1).max(100).required(),
-  description: Joi.string().max(500).optional().allow(""),
-}).unknown(false);
+}).unknown(true);
 
 // Brand schema
 const brandSchema = Joi.object({
   name: Joi.string().trim().min(1).max(100).required(),
-  description: Joi.string().max(500).optional().allow(""),
-}).unknown(false);
+  category_id: Joi.string().required(),
+}).unknown(true);
 
 // Model schema
 const modelSchema = Joi.object({
   name: Joi.string().trim().min(1).max(100).required(),
-  brand_id: Joi.number().integer().positive().required(),
-  description: Joi.string().max(500).optional().allow(""),
-}).unknown(false);
+  brand_id: Joi.string().required(),
+}).unknown(true);
 
 module.exports = {
   saleSchema,

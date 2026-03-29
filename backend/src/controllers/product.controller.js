@@ -1,5 +1,6 @@
 const prisma = require("../services/prisma.service");
 const auditService = require("../services/audit.service");
+const { transformProducts, transformProduct, packPrices } = require("../services/priceTransform.service");
 
 exports.getProducts = async (req, res) => {
   try {
@@ -13,7 +14,7 @@ exports.getProducts = async (req, res) => {
       orderBy: { created_at: 'desc' },
     });
     
-    res.json(products);
+    res.json(transformProducts(products));
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch products", error: error.message });
   }
@@ -27,7 +28,10 @@ exports.addProduct = async (req, res) => {
         brand: req.body.brand,
         category_id: req.body.category_id,
         stock: req.body.stock || 0,
-        prices: req.body.prices || '{}',
+        prices: packPrices({
+          purchase_price: req.body.purchase_price || 0,
+          selling_price: req.body.selling_price || 0,
+        }),
         is_deleted: false,
       },
       include: { category: { select: { name: true } } },
@@ -40,7 +44,7 @@ exports.addProduct = async (req, res) => {
       details: `Product created: ${newProduct.name} (${newProduct.id})`
     });
     
-    res.status(201).json({ message: "Product added", product: newProduct });
+    res.status(201).json({ message: "Product added", product: transformProduct(newProduct) });
   } catch (error) {
     res.status(500).json({ message: "Failed to add product", error: error.message });
   }
@@ -56,9 +60,24 @@ exports.updateProduct = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
+    const updateData = { ...req.body };
+    // Convert stock to number
+    if (updateData.stock !== undefined) {
+      updateData.stock = Number(updateData.stock);
+    }
+    // If price fields are provided, pack them into JSON
+    if (req.body.purchase_price !== undefined || req.body.selling_price !== undefined) {
+      updateData.prices = packPrices({
+        purchase_price: req.body.purchase_price || 0,
+        selling_price: req.body.selling_price || 0,
+      });
+      delete updateData.purchase_price;
+      delete updateData.selling_price;
+    }
+
     const updatedProduct = await prisma.product.update({
       where: { id: req.params.id },
-      data: req.body,
+      data: updateData,
       include: { category: { select: { name: true } } },
     });
 
@@ -69,7 +88,7 @@ exports.updateProduct = async (req, res) => {
       details: `Product updated: ${updatedProduct.name} (${updatedProduct.id})`
     });
     
-    res.json({ message: "Product updated", product: updatedProduct });
+    res.json({ message: "Product updated", product: transformProduct(updatedProduct) });
   } catch (error) {
     res.status(500).json({ message: "Failed to update product", error: error.message });
   }
@@ -98,7 +117,7 @@ exports.deleteProduct = async (req, res) => {
       details: `Product deleted: ${deletedProduct.name} (${deletedProduct.id})`
     });
     
-    res.json({ message: "Product deleted successfully", productId: req.params.id });
+    res.json({ message: "Product deleted", productId: req.params.id });
   } catch (error) {
     res.status(500).json({ message: "Failed to delete product", error: error.message });
   }
@@ -114,9 +133,11 @@ exports.restoreProduct = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
+    // Soft restore - mark as not deleted
     const restoredProduct = await prisma.product.update({
       where: { id: req.params.id },
       data: { is_deleted: false },
+      include: { category: { select: { name: true } } },
     });
     
     // Log the action
@@ -125,8 +146,8 @@ exports.restoreProduct = async (req, res) => {
       action: "RESTORE_PRODUCT",
       details: `Product restored: ${restoredProduct.name} (${restoredProduct.id})`
     });
-
-    res.json({ message: "Product restored successfully", product: restoredProduct });
+    
+    res.json({ message: "Product restored", product: transformProduct(restoredProduct) });
   } catch (error) {
     res.status(500).json({ message: "Failed to restore product", error: error.message });
   }

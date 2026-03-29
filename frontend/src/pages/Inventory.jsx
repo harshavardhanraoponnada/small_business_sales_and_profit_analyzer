@@ -44,7 +44,7 @@ export default function Inventory() {
 
   useEffect(() => {
     if (!selectedCategory) return;
-    api.get(`/brands?categoryId=${selectedCategory.category_id}&includeDeleted=${showDeleted}`)
+    api.get(`/brands?categoryId=${selectedCategory.id}&includeDeleted=${showDeleted}`)
       .then(res => setBrands(res.data));
     setSelectedBrand(null);
     setSelectedModel(null);
@@ -53,7 +53,7 @@ export default function Inventory() {
 
   useEffect(() => {
     if (!selectedBrand) return;
-    api.get(`/models?brandId=${selectedBrand.brand_id}&includeDeleted=${showDeleted}`)
+    api.get(`/models?brandId=${selectedBrand.id}&includeDeleted=${showDeleted}`)
       .then(res => setModels(res.data));
     setSelectedModel(null);
     setVariants([]);
@@ -61,20 +61,39 @@ export default function Inventory() {
 
   useEffect(() => {
     if (!selectedModel) return;
-    api.get(`/variants?modelId=${selectedModel.model_id}&includeDeleted=${showDeleted}`)
+    api.get(`/variants?modelId=${selectedModel.id}&includeDeleted=${showDeleted}`)
       .then(res => setVariants(res.data));
   }, [selectedModel, showDeleted]);
 
   /* ===== SAVE HANDLER ===== */
   const save = async () => {
     try {
-      console.log("Form data:", form);
+      console.log("Form data:", JSON.stringify(form, null, 2));
+      // Prepare the data for submission
+      const submitData = { ...form.data };
+      
+      // Convert numeric fields to proper types
+      if (submitData.stock !== undefined) {
+        submitData.stock = Number(submitData.stock);
+      }
+      if (submitData.purchase_price !== undefined) {
+        submitData.purchase_price = Number(submitData.purchase_price);
+      }
+      if (submitData.selling_price !== undefined) {
+        submitData.selling_price = Number(submitData.selling_price);
+      }
+      if (submitData.reorder_level !== undefined) {
+        submitData.reorder_level = Number(submitData.reorder_level);
+      }
+      
+      console.log("Submit data:", JSON.stringify(submitData, null, 2));
+      
       if (form.method === "PUT") {
-        console.log(`Calling PUT: ${form.endpoint}/${form.id}`, form.data);
-        await api.put(`${form.endpoint}/${form.id}`, form.data);
+        console.log(`Calling PUT: ${form.endpoint}/${form.id}`, submitData);
+        await api.put(`${form.endpoint}/${form.id}`, submitData);
       } else {
-        console.log(`Calling POST: ${form.endpoint}`, form.data);
-        await api.post(form.endpoint, form.data);
+        console.log(`Calling POST: ${form.endpoint}`, submitData);
+        await api.post(form.endpoint, submitData);
       }
       setForm(null);
 
@@ -83,20 +102,24 @@ export default function Inventory() {
         setCategories(res.data);
       }
       if (form.endpoint === "/brands") {
-        const res = await api.get(`/brands?categoryId=${selectedCategory.category_id}&includeDeleted=${showDeleted}`);
+        const res = await api.get(`/brands?categoryId=${selectedCategory.id}&includeDeleted=${showDeleted}`);
         setBrands(res.data);
       }
       if (form.endpoint === "/models") {
-        const res = await api.get(`/models?brandId=${selectedBrand.brand_id}&includeDeleted=${showDeleted}`);
+        const res = await api.get(`/models?brandId=${selectedBrand.id}&includeDeleted=${showDeleted}`);
         setModels(res.data);
       }
       if (form.endpoint === "/variants") {
-        const res = await api.get(`/variants?modelId=${selectedModel.model_id}&includeDeleted=${showDeleted}`);
+        const res = await api.get(`/variants?modelId=${selectedModel.id}&includeDeleted=${showDeleted}`);
         setVariants(res.data);
       }
     } catch (error) {
       console.error("Error saving:", error);
-      alert("Error saving. Please try again.");
+      if (error.response?.data?.message) {
+        alert(`Error: ${error.response.data.message}`);
+      } else {
+        alert("Error saving. Please try again.");
+      }
     }
   };
 
@@ -109,11 +132,11 @@ export default function Inventory() {
         setCategories(res.data);
         setSelectedCategory(null);
       } else if (itemType === "brand") {
-        const res = await api.get(`/brands?categoryId=${selectedCategory.category_id}&includeDeleted=${showDeleted}`);
+        const res = await api.get(`/brands?categoryId=${selectedCategory.id}&includeDeleted=${showDeleted}`);
         setBrands(res.data);
         setSelectedBrand(null);
       } else if (itemType === "model") {
-        const res = await api.get(`/models?brandId=${selectedBrand.brand_id}&includeDeleted=${showDeleted}`);
+        const res = await api.get(`/models?brandId=${selectedBrand.id}&includeDeleted=${showDeleted}`);
         setModels(res.data);
         setSelectedModel(null);
       }
@@ -131,10 +154,10 @@ export default function Inventory() {
         const res = await api.get(`/categories?includeDeleted=${showDeleted}`);
         setCategories(res.data);
       } else if (itemType === "brand") {
-        const res = await api.get(`/brands?categoryId=${selectedCategory.category_id}&includeDeleted=${showDeleted}`);
+        const res = await api.get(`/brands?categoryId=${selectedCategory.id}&includeDeleted=${showDeleted}`);
         setBrands(res.data);
       } else if (itemType === "model") {
-        const res = await api.get(`/models?brandId=${selectedBrand.brand_id}&includeDeleted=${showDeleted}`);
+        const res = await api.get(`/models?brandId=${selectedBrand.id}&includeDeleted=${showDeleted}`);
         setModels(res.data);
       }
     } catch (error) {
@@ -189,19 +212,19 @@ export default function Inventory() {
             >
               {categories.map(c => (
                 <ItemWithActions
-                  key={c.category_id}
+                  key={c.id}
                   label={c.name}
                   deleted={c.is_deleted === "true"}
-                  active={selectedCategory?.category_id === c.category_id}
+                  active={selectedCategory?.id === c.id}
                   onClick={() => !showDeleted && setSelectedCategory(c)}
                   theme={themeColors}
-                  onEdit={user.role === "OWNER" && !showDeleted ? () => setForm({ method: "PUT", id: c.category_id, endpoint: "/categories", data: { name: c.name } }) : null}
+                  onEdit={user.role === "OWNER" && !showDeleted ? () => setForm({ method: "PUT", id: c.id, endpoint: "/categories", data: { name: c.name } }) : null}
                   onDelete={user.role === "OWNER" && !showDeleted ? () => {
                     if (window.confirm("Are you sure you want to delete this category?")) {
-                      handleDelete("/categories", c.category_id, "category");
+                      handleDelete("/categories", c.id, "category");
                     }
                   } : null}
-                  onRestore={user.role === "OWNER" && showDeleted && c.is_deleted === "true" ? () => handleRestore("/categories", c.category_id, "category") : null}
+                  onRestore={user.role === "OWNER" && showDeleted && c.is_deleted === "true" ? () => handleRestore("/categories", c.id, "category") : null}
                 />
               ))}
             </Section>
@@ -217,7 +240,7 @@ export default function Inventory() {
                   endpoint: "/brands",
                   data: {
                     name: "",
-                    category_id: selectedCategory.category_id
+                    category_id: selectedCategory.id
                   }
                 })
               }
@@ -227,19 +250,19 @@ export default function Inventory() {
               )}
               {brands.map(b => (
                 <ItemWithActions
-                  key={b.brand_id}
+                  key={b.id}
                   label={b.name}
                   deleted={b.is_deleted === "true"}
-                  active={selectedBrand?.brand_id === b.brand_id}
+                  active={selectedBrand?.id === b.id}
                   onClick={() => !showDeleted && setSelectedBrand(b)}
                   theme={themeColors}
-                  onEdit={user.role === "OWNER" && !showDeleted ? () => setForm({ method: "PUT", id: b.brand_id, endpoint: "/brands", data: { name: b.name, category_id: b.category_id } }) : null}
+                  onEdit={user.role === "OWNER" && !showDeleted ? () => setForm({ method: "PUT", id: b.id, endpoint: "/brands", data: { name: b.name, category_id: b.category_id } }) : null}
                   onDelete={user.role === "OWNER" && !showDeleted ? () => {
                     if (window.confirm("Are you sure you want to delete this brand?")) {
-                      handleDelete("/brands", b.brand_id, "brand");
+                      handleDelete("/brands", b.id, "brand");
                     }
                   } : null}
-                  onRestore={user.role === "OWNER" && showDeleted && b.is_deleted === "true" ? () => handleRestore("/brands", b.brand_id, "brand") : null}
+                  onRestore={user.role === "OWNER" && showDeleted && b.is_deleted === "true" ? () => handleRestore("/brands", b.id, "brand") : null}
                 />
               ))}
             </Section>
@@ -254,7 +277,7 @@ export default function Inventory() {
                   endpoint: "/models",
                   data: {
                     name: "",
-                    brand_id: selectedBrand.brand_id
+                    brand_id: selectedBrand.id
                   }
                 })
               }
@@ -264,19 +287,19 @@ export default function Inventory() {
               )}
               {models.map(m => (
                 <ItemWithActions
-                  key={m.model_id}
+                  key={m.id}
                   label={m.name}
                   deleted={m.is_deleted === "true"}
-                  active={selectedModel?.model_id === m.model_id}
+                  active={selectedModel?.id === m.id}
                   onClick={() => !showDeleted && setSelectedModel(m)}
                   theme={themeColors}
-                  onEdit={user.role === "OWNER" && !showDeleted ? () => setForm({ method: "PUT", id: m.model_id, endpoint: "/models", data: { name: m.name, brand_id: m.brand_id } }) : null}
+                  onEdit={user.role === "OWNER" && !showDeleted ? () => setForm({ method: "PUT", id: m.id, endpoint: "/models", data: { name: m.name, brand_id: m.brand_id } }) : null}
                   onDelete={user.role === "OWNER" && !showDeleted ? () => {
                     if (window.confirm("Are you sure you want to delete this model?")) {
-                      handleDelete("/models", m.model_id, "model");
+                      handleDelete("/models", m.id, "model");
                     }
                   } : null}
-                  onRestore={user.role === "OWNER" && showDeleted && m.is_deleted === "true" ? () => handleRestore("/models", m.model_id, "model") : null}
+                  onRestore={user.role === "OWNER" && showDeleted && m.is_deleted === "true" ? () => handleRestore("/models", m.id, "model") : null}
                 />
               ))}
             </Section>
@@ -307,7 +330,7 @@ export default function Inventory() {
                         method: "POST",
                         endpoint: "/variants",
                         data: {
-                          model_id: selectedModel.model_id,
+                          model_id: selectedModel.id,
                           variant_name: "",
                           stock: 0,
                           purchase_price: 0,
@@ -343,7 +366,7 @@ export default function Inventory() {
                   <tbody>
                     {variants.map(v => (
                       <tr
-                        key={v.variant_id}
+                        key={v.id}
                         style={{
                           color:
                             Number(v.stock) <= Number(v.reorder_level)
@@ -360,7 +383,7 @@ export default function Inventory() {
                               onClick={() =>
                                 setForm({
                                   method: "PUT",
-                                  id: v.variant_id,
+                                  id: v.id,
                                   endpoint: "/variants",
                                   data: {
                                     variant_name: v.variant_name,

@@ -1,5 +1,6 @@
 const prisma = require("../services/prisma.service");
 const auditService = require("../services/audit.service");
+const { transformVariants, transformVariant, packPrices } = require("../services/priceTransform.service");
 
 exports.getVariants = async (req, res) => {
   try {
@@ -16,7 +17,7 @@ exports.getVariants = async (req, res) => {
       orderBy: { created_at: 'desc' },
     });
     
-    res.json(variants);
+    res.json(transformVariants(variants));
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch variants", error: error.message });
   }
@@ -29,7 +30,11 @@ exports.addVariant = async (req, res) => {
         model_id: req.body.model_id,
         variant_name: req.body.variant_name,
         stock: Number(req.body.stock) || 0,
-        prices: req.body.prices || '{}',
+        prices: packPrices({
+          purchase_price: req.body.purchase_price || 0,
+          selling_price: req.body.selling_price || 0,
+          reorder_level: req.body.reorder_level || 0,
+        }),
         is_deleted: false,
       },
       include: { model: { select: { name: true } } },
@@ -42,7 +47,7 @@ exports.addVariant = async (req, res) => {
       details: `Variant created: ${newVariant.variant_name} (${newVariant.id})`
     });
     
-    res.status(201).json(newVariant);
+    res.status(201).json(transformVariant(newVariant));
   } catch (error) {
     res.status(500).json({ message: "Failed to add variant", error: error.message });
   }
@@ -58,9 +63,26 @@ exports.updateVariant = async (req, res) => {
       return res.status(404).json({ message: "Variant not found" });
     }
 
+    const updateData = { ...req.body };
+    // Convert stock to number
+    if (updateData.stock !== undefined) {
+      updateData.stock = Number(updateData.stock);
+    }
+    // If price fields are provided, pack them into JSON
+    if (req.body.purchase_price !== undefined || req.body.selling_price !== undefined || req.body.reorder_level !== undefined) {
+      updateData.prices = packPrices({
+        purchase_price: req.body.purchase_price || 0,
+        selling_price: req.body.selling_price || 0,
+        reorder_level: req.body.reorder_level || 0,
+      });
+      delete updateData.purchase_price;
+      delete updateData.selling_price;
+      delete updateData.reorder_level;
+    }
+
     const updatedVariant = await prisma.variant.update({
       where: { id: req.params.id },
-      data: req.body,
+      data: updateData,
       include: { model: { select: { name: true } } },
     });
 
@@ -71,7 +93,7 @@ exports.updateVariant = async (req, res) => {
       details: `Variant updated: ${updatedVariant.variant_name} (${updatedVariant.id})`
     });
 
-    res.json(updatedVariant);
+    res.json(transformVariant(updatedVariant));
   } catch (error) {
     res.status(500).json({ message: "Failed to update variant", error: error.message });
   }
@@ -119,6 +141,7 @@ exports.restoreVariant = async (req, res) => {
     const restoredVariant = await prisma.variant.update({
       where: { id: req.params.id },
       data: { is_deleted: false },
+      include: { model: { select: { name: true } } },
     });
 
     // Log the action
@@ -128,7 +151,7 @@ exports.restoreVariant = async (req, res) => {
       details: `Variant restored: ${restoredVariant.variant_name} (${restoredVariant.id})`
     });
 
-    res.json({ message: "Variant restored successfully", variant: restoredVariant });
+    res.json({ message: "Variant restored successfully", variant: transformVariant(restoredVariant) });
   } catch (error) {
     res.status(500).json({ message: "Failed to restore variant", error: error.message });
   }

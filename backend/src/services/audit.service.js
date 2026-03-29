@@ -1,9 +1,18 @@
-const fs = require("fs");
-const path = require("path");
+const prisma = require("./prisma.service");
 
-const LOG_FILE = path.join(__dirname, "../data/audit_logs.csv");
-
-exports.logAction = ({ user, action, details }) => {
-  const line = `\n${new Date().toISOString()},${user.username},${user.role},${action},"${details}"`;
-  fs.appendFileSync(LOG_FILE, line);
+exports.logAction = async ({ user, action, details }) => {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        action,
+        username: user.username,
+        user_role: user.role,
+        details,
+        created_by: user.id
+      }
+    });
+  } catch (error) {
+    console.error("Failed to log audit action:", error.message);
+    // Don't throw - audit logging failures shouldn't block operations
+  }
 };
