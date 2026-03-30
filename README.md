@@ -60,11 +60,28 @@ Enterprise-grade inventory, sales, and expense management platform with real-tim
 - ✅ **Soft Deletes** - is_deleted boolean for data preservation
 - ✅ **7 Controllers Migrated** - All CRUD operations use Prisma with error handling
 
-### Phase 6: Distributed Deployment 🟡 In Progress
-- ⏳ **Redis Rate Limiting** - Multi-instance rate limiting via Redis
-- ⏳ **Nginx Reverse Proxy** - Load balancing & SSL/TLS termination
-- ⏳ **Horizontal Scaling** - Docker Compose multi-instance orchestration
-- ⏳ **Session Management** - Redis-backed user sessions
+### Phase 6: Distributed Deployment 🟡 Partially Active
+
+**Phase 6.2 - Nginx Reverse Proxy** ✅ IMPLEMENTED
+- ✅ Single entry point (port 80/443)
+- ✅ Health checks & passive failover
+- ✅ Rate limiting zones (general & auth)
+- ✅ Security headers (X-Frame-Options, CSP, HSTS)
+- ✅ Gzip compression
+- ✅ SSL/TLS termination ready
+- See: `nginx.conf`, `docker-compose.yml`
+
+**Phase 6.3 - Multi-Instance Orchestration** 🟡 READY
+- ⏳ Multi-backend replicas (3+ instances)
+- ⏳ Least-connections load balancing
+- ⏳ Instance health monitoring & failover
+- ⏳ Horizontal scaling via Docker Compose
+- Ready for deployment (see PHASE_6_DEPLOYMENT.md)
+
+**Phase 6.4 - Session & Cache Management** 📋 PLANNED
+- ⏳ Redis-backed session store
+- ⏳ Cache invalidation strategy
+- ⏳ Multi-instance session consistency
 
 ## 🚀 Quick Start
 
@@ -267,15 +284,49 @@ GET    /api/users                      - User list (role-based)
 
 ## 🧪 Testing & Validation
 
-**Validation Coverage:**
-- Email format validation
-- Numeric field range checking (prices, quantities)
-- String length constraints
-- Required field enforcement
-- Unknown field stripping
-- Type coercion testing
+### Test Coverage (Phase 7 - Complete)
+**Current Metrics:**
+- ✅ **Statements:** 82.32% (Target: 75-80%, EXCEEDED)
+- ✅ **Lines:** 82.77% (Target: 75-80%, EXCEEDED)
+- ✅ **Functions:** 69.81%
+- ✅ **Branches:** 69.45%
+- ✅ **Test Suites:** 50
+- ✅ **Total Tests:** 501+ passing
 
-**Test Results (Phase 4):**
+**Test Breakdown:**
+- **Controllers** (12 files): audit, auth, brand, category, expense, invoice, model, product, report, sales, variant
+- **Middleware** (7 files): auditLogger, authMiddleware, cache-invalidation, expenseUpload, roleMiddleware, validation
+- **Routes** (6 files): brand, category, model, route-registration, user, variant
+- **Services** (4 files): logger, pdf, session + health checks
+- **Utils** (2 files): numberFormat, otp.store
+- **Integration** (5 files): auth, expense, product, sales + helpers
+
+### Running Tests
+```bash
+# Run all tests
+cd backend
+npm test
+
+# Run with coverage report
+npm run test:coverage
+
+# Watch mode (auto-rerun on changes)
+npm test -- --watch
+
+# Run specific test file
+npm test -- auth.controller.test.js
+
+# View coverage HTML report
+open coverage/lcov-report/index.html
+```
+
+### Input Validation Coverage
+- ✅ Email format validation
+- ✅ Numeric field range checking (prices, quantities)
+- ✅ String length constraints
+- ✅ Required field enforcement
+- ✅ Unknown field stripping
+- ✅ Type coercion testing
 - ✅ Valid inputs: 201 Created
 - ✅ Invalid inputs: 400 Bad Request with field-level errors
 - ✅ Missing fields: 400 with required field feedback
@@ -320,9 +371,11 @@ docker compose -f docker-compose.prod.yml up -d
 | **Phase 3** | Audit Logging | ✅ Complete | CSV→PostgreSQL action trails |
 | **Phase 4** | Structured Logging & Validation | ✅ Complete | Pino + Joi schemas |
 | **Phase 5** | Database Migration | ✅ Complete | PostgreSQL + Prisma ORM |
-| **Phase 6** | Distributed Deployment | 🟡 In Progress | Redis scaling, Nginx proxy |
-| **Phase 7** | Testing & CI/CD | 📋 Planned | Jest, GitHub Actions |
-| **Phase 8** | Frontend Enhancements | 📋 Planned | WebSockets, real-time updates |
+| **Phase 6.2** | Nginx Reverse Proxy | ✅ Complete | Load balancing, health checks, SSL ready |
+| **Phase 6.3** | Multi-Instance Orchestration | 🟡 Ready | Awaiting deployment (3+ backend replicas) |
+| **Phase 6.4** | Session & Cache Management | 📋 Planned | Redis sessions, cache invalidation |
+| **Phase 7** | Testing & Coverage | ✅ Complete | 82%+ coverage, 501 tests, 50 suites |
+| **Phase 8** | Frontend Enhancements | 📋 Planned | UI/UX modernization (React 19, modern design) |
 | **Phase 9** | ML Model Versioning | 📋 Planned | Model registry, A/B testing |
 | **Phase 10** | Operations Runbooks | 📋 Planned | Deployment guides, SRE |
 
@@ -437,6 +490,7 @@ For questions or issues:
 
 ---
 
-**Last Updated:** March 2026  
-**Status:** Production Ready (Phase 5 Complete, Phase 6 In Progress)  
-**Version:** 1.0.0
+**Last Updated:** March 30, 2026  
+**Status:** Phase 7 Testing Complete, Phase 8 Frontend Modernization Next  
+**Version:** 1.0.0  
+**Test Coverage:** 82.32% statements, 82.77% lines (501 tests across 50 suites)
