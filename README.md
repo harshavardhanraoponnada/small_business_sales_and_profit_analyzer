@@ -45,7 +45,7 @@ Enterprise-grade inventory, sales, and expense management platform with real-tim
 ### Phase 1-4: Security & Infrastructure ✅
 - ✅ **CORS & Security Headers** - Request origin validation, X-Frame-Options, Content-Security-Policy
 - ✅ **JWT Authentication** - 8-hour expiring tokens, bcrypt password hashing
-- ✅ **Rate Limiting** - 100 requests/60s per IP with graceful 429 responses
+- ✅ **Rate Limiting** - Nginx-based zones (100 req/min general, 10 req/min auth) with 429 responses
 - ✅ **Role-Based Access Control** - Admin, Manager, User roles with middleware enforcement
 - ✅ **Input Validation** - Joi schemas for all entity creation (6 schemas: Sale, Variant, Product, Category, Brand, Model)
 - ✅ **Audit Logging** - Comprehensive action trails in PostgreSQL with user tracking
@@ -71,11 +71,12 @@ Enterprise-grade inventory, sales, and expense management platform with real-tim
 - ✅ SSL/TLS termination ready
 - See: `nginx.conf`, `docker-compose.yml`
 
-**Phase 6.3 - Multi-Instance Orchestration** 🟡 READY
-- ⏳ Multi-backend replicas (3+ instances)
-- ⏳ Least-connections load balancing
-- ⏳ Instance health monitoring & failover
-- ⏳ Horizontal scaling via Docker Compose
+**Phase 6.3 - Multi-Instance Orchestration** ✅ CONFIGURED
+- ✅ 3 backend replicas defined (backend_1, backend_2, backend_3)
+- ✅ Least-connections load balancing (Nginx)
+- ✅ Instance health monitoring & passive failover configured
+- ✅ Redis connection & database pooling per instance
+- ⏳ Needs verification: Deploy with `docker compose up` and test load distribution
 - Ready for deployment (see PHASE_6_DEPLOYMENT.md)
 
 **Phase 6.4 - Session & Cache Management** 📋 PLANNED
@@ -210,7 +211,7 @@ app/
 | **HTTPS/TLS** | Nginx reverse proxy (Phase 6) | ⏳ In Progress |
 | **JWT Auth** | 8-hour expiring tokens | ✅ Active |
 | **Password Hashing** | bcryptjs (10 salt rounds) | ✅ Active |
-| **Rate Limiting** | Redis-backed (Phase 6) | ⏳ In Progress |
+| **Rate Limiting** | Nginx zone-based (100r/m general, 10r/m auth) | ✅ Active |
 | **CORS** | Origin whitelist (http://localhost:5174) | ✅ Active |
 | **Input Validation** | Joi schemas on all endpoints | ✅ Active |
 | **SQL Injection** | Prisma parameterized queries | ✅ Active |
@@ -372,7 +373,7 @@ docker compose -f docker-compose.prod.yml up -d
 | **Phase 4** | Structured Logging & Validation | ✅ Complete | Pino + Joi schemas |
 | **Phase 5** | Database Migration | ✅ Complete | PostgreSQL + Prisma ORM |
 | **Phase 6.2** | Nginx Reverse Proxy | ✅ Complete | Load balancing, health checks, SSL ready |
-| **Phase 6.3** | Multi-Instance Orchestration | 🟡 Ready | Awaiting deployment (3+ backend replicas) |
+| **Phase 6.3** | Multi-Instance Orchestration | ✅ Configured | 3 replicas + Nginx load balancing ready in docker-compose |
 | **Phase 6.4** | Session & Cache Management | 📋 Planned | Redis sessions, cache invalidation |
 | **Phase 7** | Testing & Coverage | ✅ Complete | 82%+ coverage, 501 tests, 50 suites |
 | **Phase 8** | Frontend Enhancements | 📋 Planned | UI/UX modernization (React 19, modern design) |
