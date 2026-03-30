@@ -11,7 +11,6 @@ import {
 import { formatNumber } from "../utils/numberFormat";
 
 export default function ProfitTrendChart({ data, theme }) {
-  const [isVisible, setIsVisible] = useState(true);
   const [animate, setAnimate] = useState(false);
   const [key, setKey] = useState(0);
   const ref = useRef(null);

@@ -1,10 +1,9 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import { useAuth } from "../auth/authContext";
 import { useTheme } from "../app/ThemeContext";
 
-import Sidebar from "../components/layout/Sidebar";
-import Header from "../components/layout/Header";
 import { formatNumber } from "../utils/numberFormat";
 
 export default function Inventory() {
@@ -169,19 +168,13 @@ export default function Inventory() {
   return (
     <div
       style={{
-        display: "flex",
-        minHeight: "100vh",
+        minHeight: "calc(100vh - 84px)",
         background: isDarkMode
           ? "#0f172a"
           : "#f8fafc"
       }}
     >
-      <Sidebar />
-
-      <div style={{ flex: 1, marginLeft: "280px" }}>
-        <Header title="Inventory" />
-
-        <div style={{ padding: "2rem" }}>
+      <div style={{ padding: "2rem" }}>
           {user.role === "OWNER" && (
             <div style={{ marginBottom: "1rem", display: "flex", gap: "0.5rem", alignItems: "center" }}>
               <label style={{ color: themeColors.text, fontWeight: 500 }}>
@@ -448,7 +441,6 @@ export default function Inventory() {
               </div>
             </div>
           )}
-        </div>
       </div>
     </div>
   );

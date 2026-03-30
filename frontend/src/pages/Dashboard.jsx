@@ -1,10 +1,9 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import { useTheme } from "../app/ThemeContext";
 import { useAuth } from "../auth/authContext";
 import api from "../services/api";
 
-import Sidebar from "../components/layout/Sidebar";
-import Header from "../components/layout/Header";
 import StatCard from "../components/common/StatCard";
 
 import SalesTrendChart from "../charts/SalesTrendChart";
@@ -127,18 +126,12 @@ export default function Dashboard() {
   return (
     <div
       style={{
-        display: "flex",
-        minHeight: "100vh",
+        minHeight: "calc(100vh - 84px)",
         backgroundColor: themeColors.background,
         color: themeColors.text,
       }}
     >
-      <Sidebar />
-
-      <div style={{ flex: 1, marginLeft: "280px" }}>
-        <Header title="Dashboard" />
-
-        <div style={{ padding: "2rem", maxWidth: "1400px", margin: "0 auto" }}>
+      <div style={{ padding: "2rem", maxWidth: "1400px", margin: "0 auto" }}>
 
           {isStaff ? (
             <>
@@ -511,7 +504,6 @@ export default function Dashboard() {
             </>
           )}
 
-        </div>
       </div>
 
       {/* Schedule Report Modal */}

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Download, FileText } from "lucide-react";
 import api from "../../services/api";
 
-export default function ExportButtons({ reportType, theme, disabled = false }) {
+export default function ExportButtons({ reportType, disabled = false }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 

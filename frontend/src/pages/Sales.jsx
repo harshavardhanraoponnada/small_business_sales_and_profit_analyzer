@@ -4,8 +4,6 @@ import { useTheme } from "../app/ThemeContext";
 import { useAuth } from "../auth/authContext";
 import { formatNumber } from "../utils/numberFormat";
 
-import Sidebar from "../components/layout/Sidebar";
-import Header from "../components/layout/Header";
 import StatCard from "../components/common/StatCard";
 
 import {
@@ -166,9 +164,6 @@ export default memo(function Sales() {
     success: "#10b981"
   }), [isDarkMode]);
 
-  // Memoized theme object for StatCard components
-  const statCardTheme = useMemo(() => ({ ...themeColors, isDarkMode }), [themeColors, isDarkMode]);
-
   /* ================= LOAD DATA ================= */
   useEffect(() => {
     const loadData = async () => {
@@ -180,7 +175,7 @@ export default memo(function Sales() {
         ]);
         setCategories(categoriesRes.data);
         setSales(salesRes.data.sort((a, b) => new Date(b.date) - new Date(a.date)));
-      } catch (err) {
+      } catch {
         setError("Failed to load data");
       } finally {
         setLoading(false);
@@ -264,23 +259,13 @@ export default memo(function Sales() {
 
   return (
     <div style={{
-      display: "flex",
-      minHeight: "100vh",
+      minHeight: "calc(100vh - 84px)",
       backgroundColor: themeColors.background,
       color: themeColors.text,
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       transition: "all 0.3s ease"
     }}>
-      <Sidebar />
-
       <div style={{
-        flex: 1,
-        backgroundColor: themeColors.background,
-        marginLeft: "280px"
-      }}>
-        <Header title="Sales" />
-
-        <div style={{
           padding: "2rem",
           maxWidth: "1200px",
           margin: "0 auto"
@@ -695,7 +680,6 @@ export default memo(function Sales() {
               )}
             </div>
           </div>
-        </div>
       </div>
     </div>
   );

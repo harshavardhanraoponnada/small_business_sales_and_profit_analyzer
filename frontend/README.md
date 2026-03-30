@@ -1,16 +1,66 @@
-# React + Vite
+# Frontend (React + Vite + TailwindCSS)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+PhoneVerse frontend for inventory, sales, expenses, and analytics management.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- React 19
+- Vite 7
+- TailwindCSS 4 (`@tailwindcss/vite` plugin)
+- React Router 7
+- Axios
+- Recharts
+- Framer Motion
+- Lucide React
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+From this folder:
 
-## Expanding the ESLint configuration
+```bash
+npm install
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Default local URL: `http://localhost:5174`
+
+## Scripts
+
+- `npm run dev` - start local dev server
+- `npm run build` - production build
+- `npm run lint` - run ESLint
+- `npm run preview` - preview production build
+
+## Styling System
+
+This app now uses TailwindCSS v4.
+
+- Tailwind is wired through `vite.config.js` via `@tailwindcss/vite`
+- Global styles are in `src/index.css` and start with `@import "tailwindcss"`
+- A custom dark variant is declared in `src/index.css`
+- Shared design tokens are available in `src/styles/theme.js`
+
+## Layout and Routing
+
+- Route definitions live in `src/app/router.jsx`
+- `AppLayout` wraps protected routes and renders shared Sidebar + Header
+- Page components now render page content only (layout concerns moved out)
+
+## Authentication UI
+
+- Login route (`/login`) uses `src/auth/ModernLogin.jsx`
+- Includes dark/light toggle and animated transitions
+- Forgot/reset password flows continue to call backend auth endpoints
+
+## Environment
+
+The API client is configured in `src/services/api.js`.
+
+- Base URL defaults to `http://localhost:5000/api`
+- JWT token is automatically attached from `localStorage`
+
+## Notes
+
+- Keep frontend files in ESM format (`import`/`export`)
+- Prefer Tailwind utility classes for new UI work
+- Keep role-based route protection aligned with `ProtectedRoute`

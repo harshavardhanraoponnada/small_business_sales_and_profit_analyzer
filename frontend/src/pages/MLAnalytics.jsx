@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Brain, TrendingUp, TrendingDown, DollarSign, RefreshCw } from 'lucide-react';
 import api from '../services/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import Sidebar from '../components/layout/Sidebar';
 import './MLAnalytics.css';
 import { formatNumber } from '../utils/numberFormat';
 
@@ -14,12 +13,7 @@ export default function MLAnalytics() {
   const [error, setError] = useState(null);
   const [training, setTraining] = useState(false);
 
-  useEffect(() => {
-    fetchPredictions();
-    fetchMetrics();
-  }, [period]);
-
-  const fetchPredictions = async () => {
+  const fetchPredictions = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -30,9 +24,9 @@ export default function MLAnalytics() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [period]);
 
-  const fetchMetrics = async () => {
+  const fetchMetrics = useCallback(async () => {
     try {
       const [salesRes, expensesRes] = await Promise.all([
         api.get('/ml/predictions/evaluate/sales'),
@@ -42,10 +36,15 @@ export default function MLAnalytics() {
         sales: salesRes.data.metrics,
         expenses: expensesRes.data.metrics
       });
-    } catch (err) {
+    } catch {
       setMetrics({ sales: null, expenses: null });
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchPredictions();
+    fetchMetrics();
+  }, [fetchPredictions, fetchMetrics]);
 
   const trainModels = async () => {
     try {
@@ -84,62 +83,59 @@ export default function MLAnalytics() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar />
-      <div className="ml-analytics-wrapper">
-        <div className="page-header">
-          <h1><Brain size={28} /> AI Insights</h1>
-          <div className="header-actions">
-            <select value={period} onChange={(e) => setPeriod(Number(e.target.value))} className="period-select">
-              <option value={7}>7 Days</option>
-              <option value={30}>30 Days</option>
-              <option value={90}>90 Days</option>
-              <option value={180}>180 Days</option>
-            </select>
-            <button onClick={trainModels} disabled={training} className="btn-train">
-              <RefreshCw size={18} className={training ? 'spin' : ''} />
-              {training ? 'Training...' : 'Train Models'}
-            </button>
-          </div>
+    <div className="ml-analytics-wrapper">
+      <div className="page-header">
+        <h1><Brain size={28} /> AI Insights</h1>
+        <div className="header-actions">
+          <select value={period} onChange={(e) => setPeriod(Number(e.target.value))} className="period-select">
+            <option value={7}>7 Days</option>
+            <option value={30}>30 Days</option>
+            <option value={90}>90 Days</option>
+            <option value={180}>180 Days</option>
+          </select>
+          <button onClick={trainModels} disabled={training} className="btn-train">
+            <RefreshCw size={18} className={training ? 'spin' : ''} />
+            {training ? 'Training...' : 'Train Models'}
+          </button>
         </div>
+      </div>
 
-        <div className="metrics-grid">
-          <MetricCard 
-            title="Sales Forecast" 
-            data={predictions?.sales} 
-            icon={<TrendingUp />} 
-            color="green" 
-          />
-          <MetricCard 
-            title="Expenses Forecast" 
-            data={predictions?.expenses} 
-            icon={<TrendingDown />} 
-            color="red" 
-          />
-          <MetricCard 
-            title="Profit Forecast" 
-            data={predictions?.profit} 
-            icon={<DollarSign />} 
-            color="blue" 
-          />
-        </div>
+      <div className="metrics-grid">
+        <MetricCard 
+          title="Sales Forecast" 
+          data={predictions?.sales} 
+          icon={<TrendingUp />} 
+          color="green" 
+        />
+        <MetricCard 
+          title="Expenses Forecast" 
+          data={predictions?.expenses} 
+          icon={<TrendingDown />} 
+          color="red" 
+        />
+        <MetricCard 
+          title="Profit Forecast" 
+          data={predictions?.profit} 
+          icon={<DollarSign />} 
+          color="blue" 
+        />
+      </div>
 
-        <div className="model-metrics-grid">
-          <ModelMetricsCard title="Sales Model" metrics={metrics.sales} />
-          <ModelMetricsCard title="Expenses Model" metrics={metrics.expenses} />
-        </div>
+      <div className="model-metrics-grid">
+        <ModelMetricsCard title="Sales Model" metrics={metrics.sales} />
+        <ModelMetricsCard title="Expenses Model" metrics={metrics.expenses} />
+      </div>
 
-        <div className="predictions-container">
-          <PredictionChart data={predictions?.sales?.data} title="Sales Forecast (₹)" />
-          <PredictionChart data={predictions?.expenses?.data} title="Expenses Forecast (₹)" />
-          <PredictionChart data={predictions?.profit?.data} title="Profit Forecast (₹)" />
-        </div>
+      <div className="predictions-container">
+        <PredictionChart data={predictions?.sales?.data} title="Sales Forecast (₹)" />
+        <PredictionChart data={predictions?.expenses?.data} title="Expenses Forecast (₹)" />
+        <PredictionChart data={predictions?.profit?.data} title="Profit Forecast (₹)" />
+      </div>
 
-        <div className="predictions-tables">
-          <PredictionTable data={predictions?.sales?.data} title="Sales Predictions" />
-          <PredictionTable data={predictions?.expenses?.data} title="Expenses Predictions" />
-          <PredictionTable data={predictions?.profit?.data} title="Profit Predictions" />
-        </div>
+      <div className="predictions-tables">
+        <PredictionTable data={predictions?.sales?.data} title="Sales Predictions" />
+        <PredictionTable data={predictions?.expenses?.data} title="Expenses Predictions" />
+        <PredictionTable data={predictions?.profit?.data} title="Profit Predictions" />
       </div>
     </div>
   );

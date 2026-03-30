@@ -4,7 +4,6 @@ import ExpenseCalendar from "./ExpenseCalendar";
 
 export default function CategoryCalendarToggle({ expenses, theme, categoryData }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [showCategorySelector, setShowCategorySelector] = useState(false);
 
   // Get unique categories from data
   const categories = categoryData ? categoryData.map((c) => c.category) : [];

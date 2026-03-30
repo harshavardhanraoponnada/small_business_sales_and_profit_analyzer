@@ -5,11 +5,9 @@
 }
 
 .ml-analytics-wrapper {
-  flex: 1;
+  min-height: calc(100vh - 84px);
   padding: 2rem;
   overflow-y: auto;
-  margin-left: 280px;
-  width: calc(100% - 280px);
 }
 
 .page-header {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { formatNumber } from "../../utils/numberFormat";
 
@@ -18,14 +18,8 @@ const COLORS = {
 
 export default function ExpenseCalendar({ expenses, theme, selectedCategory = null }) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [daysInMonth, setDaysInMonth] = useState([]);
-  const [expensesByDate, setExpensesByDate] = useState({});
 
-  useEffect(() => {
-    generateCalendar();
-  }, [currentDate, expenses, selectedCategory]);
-
-  const generateCalendar = () => {
+  const { daysInMonth, expensesByDate } = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
@@ -41,8 +35,6 @@ export default function ExpenseCalendar({ expenses, theme, selectedCategory = nu
     for (let i = 1; i <= daysCount; i++) {
       days.push(i);
     }
-
-    setDaysInMonth(days);
 
     // Group expenses by date
     const grouped = {};
@@ -69,8 +61,8 @@ export default function ExpenseCalendar({ expenses, theme, selectedCategory = nu
       }
     });
 
-    setExpensesByDate(grouped);
-  };
+    return { daysInMonth: days, expensesByDate: grouped };
+  }, [currentDate, expenses, selectedCategory]);
 
   const previousMonth = () => {
     setCurrentDate(
@@ -95,11 +87,6 @@ export default function ExpenseCalendar({ expenses, theme, selectedCategory = nu
       new Date(parseInt(newYear), currentDate.getMonth())
     );
   };
-
-  const monthName = currentDate.toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric"
-  });
 
   const months = [
     "January", "February", "March", "April", "May", "June",

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "../app/ThemeContext";
 import api from "../services/api";
-import Sidebar from "../components/layout/Sidebar";
 import Header from "../components/layout/Header";
 
 import { Users as UsersIcon } from "lucide-react";
@@ -190,19 +189,7 @@ export default function Users() {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        backgroundColor: themeColors.background,
-        color: themeColors.text,
-      }}
-    >
-      <Sidebar />
-
-      <div style={{ flex: 1, marginLeft: "280px" }}>
-        <Header title="Users Management" />
-
+    <>
         <div style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
 
           {/* Header with Add Button */}
@@ -794,7 +781,6 @@ export default function Users() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </>
   );
 }

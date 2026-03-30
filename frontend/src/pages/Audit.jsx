@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "../app/ThemeContext";
 import api from "../services/api";
-import Sidebar from "../components/layout/Sidebar";
-import Header from "../components/layout/Header";
 
 import { Search } from "lucide-react";
 
@@ -25,108 +23,97 @@ export default function Audit() {
 
   return (
     <div style={{
-      display: "flex",
-      minHeight: "100vh",
       backgroundColor: themeColors.background,
-      color: themeColors.text
+      color: themeColors.text,
+      minHeight: "calc(100vh - 84px)"
     }}>
-      <Sidebar />
-
       <div style={{
-        flex: 1,
-        backgroundColor: themeColors.background,
-        marginLeft: "280px"
+        padding: "2rem",
+        maxWidth: "1400px",
+        margin: "0 auto"
       }}>
-        <Header title="Audit Logs" />
-
         <div style={{
+          backgroundColor: themeColors.surface,
+          borderRadius: "12px",
           padding: "2rem",
-          maxWidth: "1400px",
-          margin: "0 auto"
+          boxShadow: isDarkMode
+            ? "0 4px 6px -1px rgba(0, 0, 0, 0.3)"
+            : "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+          border: `1px solid ${themeColors.border}`
         }}>
-          <div style={{
-            backgroundColor: themeColors.surface,
-            borderRadius: "12px",
-            padding: "2rem",
-            boxShadow: isDarkMode
-              ? "0 4px 6px -1px rgba(0, 0, 0, 0.3)"
-              : "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-            border: `1px solid ${themeColors.border}`
+          <h1 style={{
+            fontSize: "2rem",
+            fontWeight: "700",
+            margin: "0 0 2rem 0",
+            color: themeColors.text,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem"
           }}>
-            <h1 style={{
-              fontSize: "2rem",
-              fontWeight: "700",
-              margin: "0 0 2rem 0",
-              color: themeColors.text,
-              display: "flex",
-              alignItems: "center",
-              gap: "0.75rem"
-            }}>
-              <Search size={28} />
-              Audit Logs
-            </h1>
+            <Search size={28} />
+            Audit Logs
+          </h1>
 
-            <div style={{ overflowX: "auto" }}>
-              <table style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                borderRadius: "8px",
-                overflow: "hidden"
-              }}>
-                <thead>
-                  <tr style={{
-                    backgroundColor: themeColors.accent,
-                    color: "white"
+          <div style={{ overflowX: "auto" }}>
+            <table style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              borderRadius: "8px",
+              overflow: "hidden"
+            }}>
+              <thead>
+                <tr style={{
+                  backgroundColor: themeColors.accent,
+                  color: "white"
+                }}>
+                  <th style={{
+                    padding: "1rem",
+                    textAlign: "left",
+                    fontWeight: "600"
+                  }}>Timestamp</th>
+                  <th style={{
+                    padding: "1rem",
+                    textAlign: "left",
+                    fontWeight: "600"
+                  }}>Action</th>
+                  <th style={{
+                    padding: "1rem",
+                    textAlign: "left",
+                    fontWeight: "600"
+                  }}>Details</th>
+                  <th style={{
+                    padding: "1rem",
+                    textAlign: "left",
+                    fontWeight: "600"
+                  }}>User</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map((log, index) => (
+                  <tr key={index} style={{
+                    borderBottom: `1px solid ${themeColors.border}`,
+                    backgroundColor: themeColors.surface
                   }}>
-                    <th style={{
+                    <td style={{
                       padding: "1rem",
-                      textAlign: "left",
-                      fontWeight: "600"
-                    }}>Timestamp</th>
-                    <th style={{
+                      color: themeColors.text
+                    }}>{new Date(log.timestamp).toLocaleString()}</td>
+                    <td style={{
                       padding: "1rem",
-                      textAlign: "left",
-                      fontWeight: "600"
-                    }}>Action</th>
-                    <th style={{
+                      color: themeColors.text
+                    }}>{log.action}</td>
+                    <td style={{
                       padding: "1rem",
-                      textAlign: "left",
-                      fontWeight: "600"
-                    }}>Details</th>
-                    <th style={{
+                      color: themeColors.text
+                    }}>{log.details}</td>
+                    <td style={{
                       padding: "1rem",
-                      textAlign: "left",
-                      fontWeight: "600"
-                    }}>User</th>
+                      color: themeColors.text
+                    }}>{log.username}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {logs.map((log, index) => (
-                    <tr key={index} style={{
-                      borderBottom: `1px solid ${themeColors.border}`,
-                      backgroundColor: themeColors.surface
-                    }}>
-                      <td style={{
-                        padding: "1rem",
-                        color: themeColors.text
-                      }}>{new Date(log.timestamp).toLocaleString()}</td>
-                      <td style={{
-                        padding: "1rem",
-                        color: themeColors.text
-                      }}>{log.action}</td>
-                      <td style={{
-                        padding: "1rem",
-                        color: themeColors.text
-                      }}>{log.details}</td>
-                      <td style={{
-                        padding: "1rem",
-                        color: themeColors.text
-                      }}>{log.username}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

@@ -12,7 +12,6 @@ import api from "../services/api";
 import { formatNumber } from "../utils/numberFormat";
 
 export default function SalesTrendChart({ data, theme }) {
-  const [isVisible, setIsVisible] = useState(true);
   const [animate, setAnimate] = useState(false);
   const [key, setKey] = useState(0);
   /* ================= CHART STATES ================= */

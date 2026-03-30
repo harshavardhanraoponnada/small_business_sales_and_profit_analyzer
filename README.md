@@ -6,9 +6,9 @@ Enterprise-grade inventory, sales, and expense management platform with real-tim
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Frontend (React + Vite)                  │
+│             Frontend (React + Vite + TailwindCSS)           │
 │                      Port: 5174 / 3000                      │
-│        Dark Mode • Dashboard • Analytics • Real-time        │
+│   Dark Mode • Modern Login • Shared App Layout • Analytics  │
 └──────────────────────┬──────────────────────────────────────┘
                        │ HTTP/HTTPS
 ┌──────────────────────▼──────────────────────────────────────┐
@@ -29,7 +29,7 @@ Enterprise-grade inventory, sales, and expense management platform with real-tim
 
 | Layer | Technology | Version |
 |-------|-----------|---------|
-| **Frontend** | React 18, Vite, Recharts | Latest |
+| **Frontend** | React 19, Vite 7, TailwindCSS 4, Recharts, Framer Motion | Latest |
 | **Backend** | Express.js 5.2, Node.js | 18+ |
 | **Database** | PostgreSQL 15-alpine | 15 |
 | **ORM** | Prisma 5 | 5.22.0 |
@@ -59,6 +59,12 @@ Enterprise-grade inventory, sales, and expense management platform with real-tim
 - ✅ **9 Prisma Models** - User, Category, Brand, Model, Variant, Product, Sale, Expense, AuditLog
 - ✅ **Soft Deletes** - is_deleted boolean for data preservation
 - ✅ **7 Controllers Migrated** - All CRUD operations use Prisma with error handling
+
+### Frontend Modernization (Ongoing) ✅
+- ✅ **TailwindCSS v4 Integration** - Tailwind is enabled via Vite plugin and global `@import "tailwindcss"`
+- ✅ **Shared Layout Routing** - `AppLayout` centralizes Sidebar + Header for all protected pages
+- ✅ **Modern Login Experience** - Legacy login replaced by animated `ModernLogin` with dark/light mode support
+- ✅ **UI Refresh Foundation** - New utility classes, transitions, and component styling patterns
 
 ### Phase 6: Distributed Deployment 🟡 Partially Active
 
@@ -188,7 +194,7 @@ app/
 │   │   ├── pages/                 # Page components
 │   │   ├── services/              # API client (Axios)
 │   │   ├── auth/                  # JWT & Auth context
-│   │   └── styles/                # CSS & dark mode
+│   │   └── styles/                # Design tokens and shared theme exports
 │   ├── index.html
 │   └── package.json
 │

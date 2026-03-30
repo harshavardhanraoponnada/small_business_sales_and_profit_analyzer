@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "../app/ThemeContext";
 import api from "../services/api";
-import Sidebar from "../components/layout/Sidebar";
-import Header from "../components/layout/Header";
 import StatCard from "../components/common/StatCard";
 import ExpenseCard from "../components/expenses/ExpenseCard";
 import CategoryBreakdown from "../components/expenses/CategoryBreakdown";
@@ -95,7 +93,7 @@ export default function Expenses() {
       setForm({ category: "", amount: "", description: "" });
       setFile(null);
       loadExpenses();
-    } catch (err) {
+    } catch {
       setError("Failed to add expense");
     } finally {
       setLoading(false);
@@ -188,20 +186,13 @@ export default function Expenses() {
 
   return (
     <div style={{
-      display: "flex",
-      minHeight: "100vh",
+      minHeight: "calc(100vh - 84px)",
       backgroundColor: themeColors.background,
       color: themeColors.text
     }}>
-      <Sidebar />
-
       <div style={{
-        flex: 1,
-        backgroundColor: themeColors.background,
-        marginLeft: "280px"
+        backgroundColor: themeColors.background
       }}>
-        <Header title="Expenses" />
-
         <div style={{
           padding: "2rem",
           maxWidth: "1200px",

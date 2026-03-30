@@ -11,7 +11,6 @@ import { formatNumber } from "../utils/numberFormat";
 const COLORS = ["#ef4444", "#f59e0b", "#10b981", "#6366f1", "#14b8a6"];
 
 export default function ExpensePieChart({ data, theme }) {
-  const [isVisible, setIsVisible] = useState(true);
   const [animate, setAnimate] = useState(false);
   const [key, setKey] = useState(0);
   const ref = useRef(null);

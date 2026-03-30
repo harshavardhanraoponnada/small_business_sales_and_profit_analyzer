@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X, Clock, Bell } from "lucide-react";
 import api from "../../services/api";
 
