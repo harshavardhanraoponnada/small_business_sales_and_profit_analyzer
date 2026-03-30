@@ -53,3 +53,10 @@ test_endpoints.py
 .idea/
 .DS_Store
 Thumbs.db
+# Test report outputs (regenerated on each test run)
+/backend/coverage_*.txt
+/backend/test_*.txt
+/backend/test-output.txt
+
+# Disabled test archives (kept for reference but not executed)
+**/*.test.js.disabled

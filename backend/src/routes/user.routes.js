@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const auth = require("../middleware/authMiddleware");
-const { prisma } = require("../config");
+const prisma = require("../services/prisma.service");
 
 // Helper to parse user ID (handle both string and integer IDs from req.user)
 const getUserId = (id) => {

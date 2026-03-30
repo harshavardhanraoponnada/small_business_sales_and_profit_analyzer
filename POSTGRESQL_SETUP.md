@@ -51,13 +51,7 @@ npx prisma migrate dev --name initial_schema
 ```
 This creates all tables based on schema.prisma
 
-### Step 4: Run Data Migration Script
-```bash
-# Ensure you're in backend directory
-node migrate-csv-to-postgres.js
-```
-
-### Step 5: Verify Migration
+### Step 4: Verify Migration
 ```bash
 # Launch Prisma Studio to view data
 npx prisma studio
@@ -84,4 +78,4 @@ sudo service postgresql start
 
 ### Prisma seed issues:
 - Run migrations first: `npx prisma migrate deploy`
-- Then seed: `node migrate-csv-to-postgres.js`
+- If initial data needed, use Prisma seed file (see prisma/seed.js if available)

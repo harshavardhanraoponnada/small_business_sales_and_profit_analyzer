@@ -57,6 +57,7 @@ describe('Expense Routes Integration Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    delete require.cache[require.resolve('../../app')];
     app = require('../../app');
     client = createTestClient(app);
   });

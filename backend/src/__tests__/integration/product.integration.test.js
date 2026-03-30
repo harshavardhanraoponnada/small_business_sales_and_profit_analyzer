@@ -80,6 +80,19 @@ jest.mock('../../app', () => {
     return res.json({ success: true, message: 'Product restored' });
   });
 
+  // Support PUT restore path used in the test client flows.
+  router.put('/:id/restore', (req, res) => {
+    if (!req.headers.authorization) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    const product = products.find(p => p.id === parseInt(req.params.id));
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    product.is_deleted = false;
+    return res.json({ success: true, message: 'Product restored' });
+  });
+
   app.use('/api/products', router);
   return app;
 });
@@ -91,6 +104,7 @@ describe('Product Routes Integration Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    delete require.cache[require.resolve('../../app')];
     app = require('../../app');
     client = createTestClient(app);
   });

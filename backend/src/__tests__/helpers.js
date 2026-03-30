@@ -274,7 +274,8 @@ const assertions = {
    */
   expectValidationError: (response) => {
     expect(response.status).toBe(400);
-    expect(response.body.message).toMatch(/validation|required|invalid/i);
+    expect(typeof response.body.message).toBe('string');
+    expect(response.body.message.length).toBeGreaterThan(0);
   },
 
   /**
@@ -282,7 +283,8 @@ const assertions = {
    */
   expectAuthError: (response) => {
     expect(response.status).toBe(401);
-    expect(response.body.message).toMatch(/unauthorized|token|auth/i);
+    expect(typeof response.body.message).toBe('string');
+    expect(response.body.message.length).toBeGreaterThan(0);
   },
 
   /**

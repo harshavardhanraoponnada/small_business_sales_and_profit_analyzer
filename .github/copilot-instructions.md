@@ -4,7 +4,7 @@
 - This repo is a split frontend/backend app. The React + Vite client lives under frontend/ and talks to an Express API under backend/.
 - The main API entry is backend/src/server.js; backend/server.js is a stray frontend `Sidebar` component, not a backend entrypoint.
 - Routes are registered in backend/src/app.js.
-- Most business data is stored in CSV files under backend/src/data/ and accessed via `readCSV()`/`writeCSV()` in backend/src/services/csv.service.js. Audit logs append to backend/src/data/audit_logs.csv via `logAction()` in backend/src/services/audit.service.js.
+- All business data is stored in PostgreSQL via Prisma ORM. Audit logs are persisted in the AuditLog table via `logAction()` in backend/src/services/audit.service.js.
 - Invoices are generated as PDFs on sale creation and written to backend/src/uploads/invoices by backend/src/services/invoice.service.js.
 - There is a separate ML/prediction module planned under a Python microservice; currently being set up with Prophet/scikit-learn. Will integrate via HTTP bridge once ready.
 
@@ -21,7 +21,7 @@
 
 ## External integrations
 - PDF generation uses `pdfkit` (backend/src/services/invoice.service.js).
-- CSV parsing/writing uses a simple custom parser (backend/src/services/csv.service.js) even though `csv-parser` is installed.
+- Legacy CSV support has been removed; all data operations use Prisma ORM with PostgreSQL.
 
 ## Developer workflows
 - Backend: run from backend/ using `npm run dev` (nodemon) or `npm start` (node) per backend/package.json.

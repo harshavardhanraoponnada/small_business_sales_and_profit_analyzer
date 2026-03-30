@@ -27,6 +27,12 @@ jest.mock('../../app', () => {
     if (!req.body.product_id && !req.body.variant_id) {
       return res.status(400).json({ message: 'product_id or variant_id required' });
     }
+    if (req.body.quantity == null || req.body.total == null) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+    if (Number(req.body.quantity) <= 0) {
+      return res.status(400).json({ message: 'Invalid quantity' });
+    }
     
     const newSale = {
       id: sales.length + 1,
@@ -51,6 +57,7 @@ describe('Sales Routes Integration Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    delete require.cache[require.resolve('../../app')];
     app = require('../../app');
     client = createTestClient(app);
   });

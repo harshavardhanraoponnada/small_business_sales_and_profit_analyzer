@@ -142,9 +142,6 @@ python app.py
 ```bash
 # Run Prisma migrations
 npx prisma migrate deploy
-
-# Seed database (if needed)
-node migrate-csv-to-postgres.js
 ```
 
 ## 📁 Project Structure

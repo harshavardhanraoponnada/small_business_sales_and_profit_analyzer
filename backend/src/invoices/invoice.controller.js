@@ -1,12 +1,9 @@
 const path = require("path");
 const fs = require("fs");
-const { readCSV } = require("../services/csv.service");
+const { PrismaClient } = require("@prisma/client");
 const { generateInvoicePDF } = require("../services/pdf.service");
 
-const salesFile = path.join(__dirname, "../data/sales.csv");
-const variantsFile = path.join(__dirname, "../data/variants.csv");
-const modelsFile = path.join(__dirname, "../data/models.csv");
-const brandsFile = path.join(__dirname, "../data/brands.csv");
+const prisma = new PrismaClient();
 const invoiceDir = path.join(__dirname, "../uploads/invoices");
 
 if (!fs.existsSync(invoiceDir)) {
@@ -16,49 +13,63 @@ if (!fs.existsSync(invoiceDir)) {
 exports.downloadInvoice = async (req, res) => {
   const { id: saleId } = req.params;
 
-  const sales = await readCSV(salesFile);
-  const variants = await readCSV(variantsFile);
-  const models = await readCSV(modelsFile);
-  const brands = await readCSV(brandsFile);
+  try {
+    // Fetch sale with variant and product relations
+    const sale = await prisma.sale.findUnique({
+      where: { id: saleId },
+      include: {
+        variant: {
+          include: {
+            model: {
+              include: {
+                brand: true
+              }
+            }
+          }
+        },
+        product: true
+      }
+    });
 
-  const sale = sales.find(s => s.invoice_id === saleId);
-  if (!sale) {
-    return res.status(404).json({ message: "Sale not found" });
-  }
-
-  const variant = variants.find(v => v.variant_id === sale.variant_id);
-
-  const invoiceId = sale.invoice_id;
-  const filePath = path.join(invoiceDir, `${invoiceId}.pdf`);
-
-  // generate once
-  if (!fs.existsSync(filePath)) {
-    const qty = Number(sale.quantity);
-    const price = Number(sale.unit_price);
-
-    let itemName = "Product";
-    if (variant) {
-      const model = models.find(m => m.model_id === variant.model_id);
-      const brand = model ? brands.find(b => b.brand_id === model.brand_id) : null;
-      itemName = brand && model ? `${brand.name} ${model.name} - ${variant.variant_name}` : variant.variant_name;
-    } else {
-      itemName = "Unknown Product";
+    if (!sale) {
+      return res.status(404).json({ message: "Sale not found" });
     }
 
-    await generateInvoicePDF(filePath, {
-      invoiceId,
-      date: sale.date,
-      items: [
-        {
-          name: itemName,
-          qty,
-          price,
-          total: qty * price
-        }
-      ],
-      total: qty * price
-    });
-  }
+    const invoiceId = sale.id;
+    const filePath = path.join(invoiceDir, `${invoiceId}.pdf`);
 
-  res.download(filePath);
+    // Generate invoice once
+    if (!fs.existsSync(filePath)) {
+      const qty = sale.quantity;
+      const price = parseFloat(sale.unit_price.toString());
+
+      let itemName = "Product";
+      if (sale.variant && sale.variant.model && sale.variant.model.brand) {
+        itemName = `${sale.variant.model.brand.name} ${sale.variant.model.name} - ${sale.variant.variant_name}`;
+      } else if (sale.product) {
+        itemName = sale.product.name;
+      } else {
+        itemName = "Unknown Product";
+      }
+
+      await generateInvoicePDF(filePath, {
+        invoiceId,
+        date: sale.date,
+        items: [
+          {
+            name: itemName,
+            qty,
+            price,
+            total: qty * price
+          }
+        ],
+        total: qty * price
+      });
+    }
+
+    res.download(filePath);
+  } catch (error) {
+    console.error("Error downloading invoice:", error);
+    res.status(500).json({ message: "Error downloading invoice", error: error.message });
+  }
 };

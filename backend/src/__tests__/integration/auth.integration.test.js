@@ -14,18 +14,48 @@ jest.mock('../../app', () => {
   
   // Simplified mock routes for testing structure
   const router = express.Router();
+  const users = [
+    {
+      id: 1,
+      username: 'testuser',
+      email: 'test@example.com',
+      password: 'password123',
+      role: 'OWNER'
+    }
+  ];
   
   router.post('/login', (req, res) => {
-    if (req.body.username === 'testuser' && req.body.password === 'password123') {
-      return res.json({ token: 'mocked-jwt-token', user: { id: 1, username: 'testuser', role: 'OWNER' } });
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Validation failed: username and password are required' });
     }
-    return res.status(401).json({ message: 'Invalid credentials' });
+
+    const user = users.find(u => u.username === username);
+    if (!user || user.password !== password) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    return res.json({ token: 'mocked-jwt-token', user: { id: user.id, username: user.username, role: user.role } });
   });
   
   router.post('/add-user', (req, res) => {
     if (!req.headers.authorization) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
+
+    const { username, email, password, role = 'STAFF' } = req.body;
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: 'Validation failed: required fields missing' });
+    }
+
+    const isValidEmail = /^\S+@\S+\.\S+$/.test(email);
+    if (!isValidEmail) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    const newUser = { id: users.length + 1, username, email, password, role };
+    users.push(newUser);
+
     return res.json({ success: true, user: { username: req.body.username } });
   });
   
@@ -46,6 +76,7 @@ describe('Authentication Routes Integration Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    delete require.cache[require.resolve('../../app')];
     app = require('../../app');
     client = createTestClient(app);
   });

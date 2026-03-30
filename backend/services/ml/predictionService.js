@@ -1,5 +1,5 @@
-const { readCSV } = require('../../src/services/csv.service');
-const path = require('path');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 class PredictionService {
   async forecast(userId, type, periods = 30) {
@@ -10,7 +10,10 @@ class PredictionService {
         return this.generateDefaultForecast(periods);
       }
 
-      const values = data.map(d => Number(d.total || d.amount || 0)).filter(v => v > 0);
+      const values = data.map(d => {
+        const value = d.total || d.amount || 0;
+        return typeof value === 'object' ? parseFloat(value.toString()) : Number(value);
+      }).filter(v => v > 0);
       
       if (values.length < 5) {
         return this.generateDefaultForecast(periods);
@@ -26,13 +29,33 @@ class PredictionService {
   async getHistoricalData(type) {
     try {
       if (type === 'sales') {
-        const salesFile = path.join(__dirname, '../../src/data/sales.csv');
-        const sales = await readCSV(salesFile);
-        return sales.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const sales = await prisma.sale.findMany({
+          where: { is_deleted: false },
+          orderBy: { date: 'asc' },
+          select: {
+            date: true,
+            total: true,
+            quantity: true
+          }
+        });
+        return sales.map(s => ({
+          date: s.date.toISOString().split('T')[0],
+          total: s.total,
+          quantity: s.quantity
+        }));
       } else if (type === 'expenses') {
-        const expensesFile = path.join(__dirname, '../../src/data/expenses.csv');
-        const expenses = await readCSV(expensesFile);
-        return expenses.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const expenses = await prisma.expense.findMany({
+          where: { is_deleted: false },
+          orderBy: { date: 'asc' },
+          select: {
+            date: true,
+            amount: true
+          }
+        });
+        return expenses.map(e => ({
+          date: e.date.toISOString().split('T')[0],
+          amount: e.amount
+        }));
       }
       return [];
     } catch (error) {
