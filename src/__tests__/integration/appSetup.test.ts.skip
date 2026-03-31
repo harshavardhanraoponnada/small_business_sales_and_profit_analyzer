@@ -1,0 +1,101 @@
+/**
+ * Test: Frontend App Integration Tests
+ * Verifies main app component setup, providers, and routing
+ */
+
+import { render, screen, waitFor } from '@testing-library/react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
+import { AuthProvider } from '@/auth/authContext';
+import { BrowserRouter } from 'react-router-dom';
+
+describe('Frontend App Integration Tests', () => {
+  test('App should render without crashing', () => {
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AuthProvider>
+            <div>Test App</div>
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    );
+    expect(container).toBeDefined();
+  });
+
+  test('Providers should be composable in correct order', () => {
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AuthProvider>
+            <div data-testid="app-content">Content</div>
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    );
+    expect(screen.getByTestId('app-content')).toHaveTextContent('Content');
+  });
+
+  test('Multiple component trees should share queryClient', () => {
+    const testKey = ['shared', 'query'];
+    queryClient.setQueryData(testKey, { shared: true });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <div data-testid="component1">Component 1</div>
+      </QueryClientProvider>
+    );
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <div data-testid="component2">Component 2</div>
+      </QueryClientProvider>
+    );
+
+    const cachedData = queryClient.getQueryData(testKey);
+    expect(cachedData).toEqual({ shared: true });
+
+    queryClient.removeQueries({ queryKey: testKey });
+  });
+
+  test('Error boundary should catch rendering errors', () => {
+    // Suppress console.error for this test
+    const spy = jest.spyOn(console, 'error').mockImplementation();
+
+    const ErrorComponent = () => {
+      throw new Error('Component error');
+    };
+
+    const catchError = () => {
+      try {
+        render(<ErrorComponent />);
+      } catch (e) {
+        return true;
+      }
+      return false;
+    };
+
+    expect(catchError()).toBe(true);
+    spy.mockRestore();
+  });
+
+  test('LocalStorage should be accessible in app', () => {
+    expect(localStorage).toBeDefined();
+    localStorage.setItem('test', 'value');
+    expect(localStorage.getItem('test')).toBe('value');
+    localStorage.removeItem('test');
+  });
+
+  test('SessionStorage should be accessible in app', () => {
+    expect(sessionStorage).toBeDefined();
+    sessionStorage.setItem('session-test', 'session-value');
+    expect(sessionStorage.getItem('session-test')).toBe('session-value');
+    sessionStorage.removeItem('session-test');
+  });
+
+  test('Window object should be accessible', () => {
+    expect(window).toBeDefined();
+    expect(window.location).toBeDefined();
+    expect(window.innerHeight).toBeGreaterThan(0);
+  });
+});

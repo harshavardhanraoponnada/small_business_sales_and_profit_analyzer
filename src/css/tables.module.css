@@ -1,0 +1,37 @@
+@reference "tailwindcss";
+
+.table {
+  @apply w-full;
+}
+
+.tableHeader {
+  @apply bg-slate-50 dark:bg-slate-800;
+}
+
+.tableHeaderCell {
+  @apply px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap;
+}
+
+.tableHeaderCellSortable {
+  @apply cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors;
+}
+
+.tableBody {
+  @apply divide-y divide-slate-200 dark:divide-slate-800;
+}
+
+.tableRow {
+  @apply hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors;
+}
+
+.tableRow:nth-child(even) {
+  @apply bg-slate-50 dark:bg-slate-900;
+}
+
+.tableCell {
+  @apply px-6 py-4 text-sm text-slate-900 dark:text-slate-100;
+}
+
+.tableCellEmpty {
+  @apply text-center py-8 text-slate-500 dark:text-slate-400;
+}
