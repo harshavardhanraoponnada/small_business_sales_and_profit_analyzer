@@ -1,110 +1,136 @@
 # Infosys Inventory & Sales Management System
 
-Enterprise-grade inventory, sales, and expense management platform with real-time analytics, predictive forecasting, and comprehensive audit trails.
+Production-focused monorepo for inventory, sales, expense accounting, reporting, audit tracking, and ML-assisted forecasting.
 
-## 🏗️ Architecture Overview
+## Table of Contents
 
+1. [Overview](#overview)
+2. [Architecture](#architecture)
+3. [Project Structure](#project-structure)
+4. [Current Delivery Status](#current-delivery-status)
+5. [Tech Stack](#tech-stack)
+6. [Quick Start (Local Development)](#quick-start-local-development)
+7. [Environment Configuration](#environment-configuration)
+8. [Scripts and Commands](#scripts-and-commands)
+9. [API Surface](#api-surface)
+10. [Roles and Access Model](#roles-and-access-model)
+11. [Data Model Summary](#data-model-summary)
+12. [Testing and Quality Gates](#testing-and-quality-gates)
+13. [Deployment Notes](#deployment-notes)
+14. [Troubleshooting](#troubleshooting)
+15. [Documentation Index](#documentation-index)
+16. [Contributing](#contributing)
+17. [License](#license)
+
+## Overview
+
+This repository contains three main services:
+
+- Frontend web application (`frontend/`) for UI and user workflows
+- Backend API (`backend/`) for auth, business logic, reporting, and persistence
+- ML microservice (`ml-service/`) for forecasting and predictive analytics
+
+The system is designed for role-based business operations with auditability and operational reporting.
+
+## Architecture
+
+```text
+Frontend (React + Vite)  --->  Backend API (Express + Prisma)  --->  PostgreSQL
+                                         |                        --->  Redis
+                                         |
+                                         +----------------------->  ML Service (Flask)
 ```
-┌─────────────────────────────────────────────────────────────┐
-│             Frontend (React + Vite + TailwindCSS)           │
-│                      Port: 5174 / 3000                      │
-│   Dark Mode • Modern Login • Shared App Layout • Analytics  │
-└──────────────────────┬──────────────────────────────────────┘
-                       │ HTTP/HTTPS
-┌──────────────────────▼──────────────────────────────────────┐
-│              Backend API (Express + Prisma)                 │
-│                      Port: 5000                             │
-│         JWT Auth • Rate Limiting • Audit Logging            │
-│              PostgreSQL + Redis (Docker)                    │
-└──────────────────────┬──────────────────────────────────────┘
-                       │ HTTP Bridge
-┌──────────────────────▼──────────────────────────────────────┐
-│           ML Service (Flask + Prophet)                      │
-│                      Port: 5001                             │
-│        Demand Forecasting • Predictive Analytics            │
-└─────────────────────────────────────────────────────────────┘
+
+### Default Local Ports
+
+| Service | Default Port | Notes |
+|---|---:|---|
+| Frontend (Vite dev) | 5173 | Can change if occupied |
+| Backend API | 5000 | Main REST API |
+| ML service | 5001 | Flask forecasting service |
+| PostgreSQL | 5432 | Docker container |
+| Redis | 6379 | Docker container |
+| Nginx (compose) | 80 / 443 | Reverse proxy and LB |
+
+## Project Structure
+
+```text
+app/
+  backend/
+    prisma/
+      schema.prisma
+      migrations/
+    src/
+      app.js
+      server.js
+      controllers/
+      middleware/
+      routes/
+      services/
+      uploads/
+      data/
+  frontend/
+    docs/
+      DESIGN_SYSTEM.md
+      REFACTORING_GUIDE.md
+    src/
+      app/
+      auth/
+      components/
+      hooks/
+      lib/
+      pages/
+      services/
+      types/
+      css/
+      __tests__/
+    README.md
+  ml-service/
+    app.py
+    routes/
+    services/
+    config/
+    trained_models/
+    README.md
+  docker-compose.yml
+  nginx.conf
+  README.md
 ```
 
-## 🛠️ Tech Stack
+## Current Delivery Status
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| **Frontend** | React 19, Vite 7, TailwindCSS 4, Recharts, Framer Motion | Latest |
-| **Backend** | Express.js 5.2, Node.js | 18+ |
-| **Database** | PostgreSQL 15-alpine | 15 |
-| **ORM** | Prisma 5 | 5.22.0 |
-| **Cache/Rate Limiter** | Redis 7-alpine | 7 |
-| **Authentication** | JWT (jsonwebtoken) | 9.0.3 |
-| **Validation** | Joi | Latest |
-| **Logging** | Pino | Latest |
-| **ML Service** | Flask, Prophet, scikit-learn | Python 3.8+ |
-| **Containerization** | Docker & Docker Compose | 29.2.1+ |
+### Completed
 
-## 📋 Features Implemented
+- Security baseline: CORS, security headers, JWT auth, role middleware
+- Audit logging persisted to PostgreSQL
+- Prisma migration from CSV-first flows to PostgreSQL-backed models
+- Core CRUD endpoints for catalog, sales, expenses, reports, users
+- Frontend component library and major page refactors (TypeScript + React Query)
+- Docker compose foundation for multi-instance backend + Nginx reverse proxy
 
-### Phase 1-4: Security & Infrastructure ✅
-- ✅ **CORS & Security Headers** - Request origin validation, X-Frame-Options, Content-Security-Policy
-- ✅ **JWT Authentication** - 8-hour expiring tokens, bcrypt password hashing
-- ✅ **Rate Limiting** - Nginx-based zones (100 req/min general, 10 req/min auth) with 429 responses
-- ✅ **Role-Based Access Control** - Admin, Manager, User roles with middleware enforcement
-- ✅ **Input Validation** - Joi schemas for all entity creation (6 schemas: Sale, Variant, Product, Category, Brand, Model)
-- ✅ **Audit Logging** - Comprehensive action trails in PostgreSQL with user tracking
-- ✅ **Structured JSON Logging** - Pino logger for ELK/Datadog integration
-- ✅ **PDF Invoice Generation** - Automatic invoice creation on sale with pdfkit
+### In Progress / Remaining
 
-### Phase 5: Database Migration ✅
-- ✅ **PostgreSQL + Prisma ORM** - Type-safe database operations with migration history
-- ✅ **Docker Containerization** - PostgreSQL 15 + Redis 7 with docker-compose
-- ✅ **Data Migration** - 10,000+ records transferred from CSV with relationship integrity
-- ✅ **9 Prisma Models** - User, Category, Brand, Model, Variant, Product, Sale, Expense, AuditLog
-- ✅ **Soft Deletes** - is_deleted boolean for data preservation
-- ✅ **7 Controllers Migrated** - All CRUD operations use Prisma with error handling
+- Full migration of remaining legacy frontend JSX areas (notably ML analytics path/components)
+- Session/cache strategy hardening for distributed runtime
+- End-to-end deployment verification for load-balanced production profile
 
-### Frontend Modernization (Ongoing) ✅
-- ✅ **TailwindCSS v4 Integration** - Tailwind is enabled via Vite plugin and global `@import "tailwindcss"`
-- ✅ **Shared Layout Routing** - `AppLayout` centralizes Sidebar + Header for all protected pages
-- ✅ **Modern Login Experience** - Legacy login replaced by animated `ModernLogin` with dark/light mode support
-- ✅ **UI Refresh Foundation** - New utility classes, transitions, and component styling patterns
+## Tech Stack
 
-### Phase 6: Distributed Deployment 🟡 Partially Active
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, Vite 7, TypeScript 5, Tailwind CSS 4, React Query 5, React Hook Form, Zod, Recharts |
+| Backend | Node.js, Express 5, Prisma 5, Joi, JWT, Pino |
+| Data | PostgreSQL 15, Redis 7 |
+| ML | Flask, Prophet, scikit-learn |
+| Infra | Docker Compose, Nginx |
 
-**Phase 6.2 - Nginx Reverse Proxy** ✅ IMPLEMENTED
-- ✅ Single entry point (port 80/443)
-- ✅ Health checks & passive failover
-- ✅ Rate limiting zones (general & auth)
-- ✅ Security headers (X-Frame-Options, CSP, HSTS)
-- ✅ Gzip compression
-- ✅ SSL/TLS termination ready
-- See: `nginx.conf`, `docker-compose.yml`
+## Quick Start (Local Development)
 
-**Phase 6.3 - Multi-Instance Orchestration** ✅ CONFIGURED
-- ✅ 3 backend replicas defined (backend_1, backend_2, backend_3)
-- ✅ Least-connections load balancing (Nginx)
-- ✅ Instance health monitoring & passive failover configured
-- ✅ Redis connection & database pooling per instance
-- ⏳ Needs verification: Deploy with `docker compose up` and test load distribution
-- Ready for deployment (see PHASE_6_DEPLOYMENT.md)
-
-**Phase 6.4 - Session & Cache Management** 📋 PLANNED
-- ⏳ Redis-backed session store
-- ⏳ Cache invalidation strategy
-- ⏳ Multi-instance session consistency
-
-## 🚀 Quick Start
-
-### Prerequisites
-- **Node.js 18+** 
-- **Docker & Docker Compose 29.2.1+**
-- **PostgreSQL 15** (via Docker)
-- **Redis 7** (via Docker)
-- **Python 3.8+** (for ML service)
-
-### 1. Clone & Install
+### 1. Install Dependencies
 
 ```bash
-git clone <repository-url>
-cd app
-npm install  # Root workspace dependencies
+# Root (optional convenience scripts)
+npm install
 
 # Backend
 cd backend
@@ -114,390 +140,286 @@ npm install
 cd ../frontend
 npm install
 
-# ML Service
+# ML service
 cd ../ml-service
 pip install -r requirements.txt
 ```
 
-### 2. Environment Setup
+### 2. Configure Environment
+
+Copy from examples:
+
+- `backend/.env.example` -> `backend/.env`
+- `frontend/.env.example` -> `frontend/.env`
+- `ml-service/.env.example` -> `ml-service/.env`
+
+### 3. Start Database and Cache
 
 ```bash
-# Backend
-cp backend/.env.example backend/.env
-
-# Frontend
-cp frontend/.env.example frontend/.env
-```
-
-**Required `.env` variables:**
-```env
-# backend/.env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/infosys_app?schema=public
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=your_random_secret_key_here
-PORT=5000
-```
-
-### 3. Start Services
-
-```bash
-# Terminal 1: Database & Cache
 docker compose up -d postgres redis
+```
 
-# Terminal 2: Backend (from /backend)
+### 4. Run Backend Migrations
+
+```bash
+cd backend
+npx prisma migrate deploy
+```
+
+### 5. Run Services (separate terminals)
+
+```bash
+# Terminal A
+cd backend
 npm run dev
 
-# Terminal 3: Frontend (from /frontend)
+# Terminal B
+cd frontend
 npm run dev
 
-# Terminal 4: ML Service (from /ml-service)
+# Terminal C
+cd ml-service
 python app.py
 ```
 
-**Service URLs:**
-- Backend API: http://localhost:5000/api
-- Frontend: http://localhost:5174
-- ML Service: http://localhost:5001
-- PostgreSQL: localhost:5432
-- Redis: localhost:6379
+## Environment Configuration
 
-### 4. Database Initialization
+### Backend (`backend/.env`)
+
+Required minimum:
+
+```env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/infosys_app?schema=public
+REDIS_URL=redis://localhost:6379
+JWT_SECRET=replace_with_strong_random_secret
+CORS_ORIGINS=http://localhost:5173,http://localhost:5174
+PORT=5000
+ML_SERVICE_URL=http://localhost:5001
+```
+
+### Frontend (`frontend/.env`)
+
+```env
+VITE_API_BASE_URL=http://localhost:5000/api
+VITE_UPLOAD_BASE_URL=http://localhost:5000
+```
+
+### ML Service (`ml-service/.env`)
+
+```env
+FLASK_PORT=5001
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/infosys_app
+```
+
+## Scripts and Commands
+
+### Root Scripts
+
+| Script | Command |
+|---|---|
+| Run all tests | `npm test` |
+| Frontend tests | `npm run test:frontend` |
+| Backend tests | `npm run test:backend` |
+| Frontend coverage | `npm run test:coverage:frontend` |
+| Backend coverage | `npm run test:coverage:backend` |
+| Backend tests in Docker profile | `npm run test:backend:docker` |
+
+### Backend Scripts (`backend/package.json`)
+
+| Script | Command |
+|---|---|
+| Dev server | `npm run dev` |
+| Production start | `npm start` |
+| Unit/integration tests | `npm test` |
+| Coverage | `npm run test:coverage` |
+| Integration only | `npm run test:integration` |
+
+### Frontend Scripts (`frontend/package.json`)
+
+| Script | Command |
+|---|---|
+| Dev server | `npm run dev` |
+| Build | `npm run build` |
+| Preview | `npm run preview` |
+| Lint | `npm run lint` |
+| Tests | `npm test` |
+| Coverage | `npm run test:coverage` |
+
+## API Surface
+
+All backend routes are mounted under `/api` in `backend/src/app.js`.
+
+### Authentication and User Admin
+
+- `/api/auth/login`
+- `/api/auth/forgot-password`
+- `/api/auth/reset-password`
+- `/api/auth/add-user` (owner)
+- `/api/auth/update-user/:id` (owner)
+- `/api/auth/delete-user/:id` (owner)
+- `/api/auth/users` (owner)
+
+### Business Entities
+
+- `/api/products`
+- `/api/sales`
+- `/api/expenses`
+- `/api/categories`
+- `/api/brands`
+- `/api/models`
+- `/api/variants`
+- `/api/invoices/:id`
+
+### Reporting and Analytics
+
+- `/api/reports/summary`
+- `/api/reports/quick-stats`
+- `/api/reports/low-stock`
+- `/api/reports/sales-trend`
+- `/api/reports/profit-trend`
+- `/api/reports/expense-distribution`
+- `/api/reports/export`
+- `/api/reports/schedule`
+- `/api/reports/schedules/*`
+
+### ML Proxy Endpoints
+
+- `/api/ml/predictions/summary`
+- `/api/ml/predictions/forecast/:type`
+- `/api/ml/predictions/train`
+- `/api/ml/predictions/evaluate/:type`
+
+### User Preferences
+
+- `/api/users/profile`
+- `/api/users/preferences/reports`
+- `/api/users/:userId/preferences/reports` (owner)
+
+## Roles and Access Model
+
+The current role model in backend logic and schema:
+
+- `OWNER`
+- `ACCOUNTANT`
+- `STAFF`
+
+Role checks are enforced in route middleware via `backend/src/middleware/roleMiddleware.js`.
+
+## Data Model Summary
+
+Prisma models defined in `backend/prisma/schema.prisma` include:
+
+- User
+- Category
+- Brand
+- Model
+- Variant
+- Product
+- Sale
+- ExpenseCategory
+- Expense
+- AuditLog
+
+Design characteristics:
+
+- Soft delete support on major entities
+- Timestamp fields for lifecycle auditing
+- Foreign key relations with indexed access paths
+- User-linked creation trails for operational accountability
+
+## Testing and Quality Gates
+
+### Recommended pre-merge checks
 
 ```bash
-# Run Prisma migrations
-npx prisma migrate deploy
-```
-
-## 📁 Project Structure
-
-```
-app/
-├── backend/
-│   ├── src/
-│   │   ├── app.js                 # Express app setup
-│   │   ├── server.js              # Server entry point
-│   │   ├── controllers/           # Request handlers (7 Prisma-ready)
-│   │   ├── routes/                # Route definitions
-│   │   ├── middleware/            # Auth, validation, audit logging
-│   │   ├── services/              # Business logic & CSV/PDF generation
-│   │   ├── data/                  # CSV backups (for disaster recovery)
-│   │   └── uploads/               # Generated invoices & user files
-│   ├── prisma/
-│   │   ├── schema.prisma          # Database schema & migrations
-│   │   └── migrations/            # Migration history
-│   └── package.json
-│
-├── frontend/
-│   ├── src/
-│   │   ├── app/                   # Routing & protected routes
-│   │   ├── components/            # UI components
-│   │   ├── pages/                 # Page components
-│   │   ├── services/              # API client (Axios)
-│   │   ├── auth/                  # JWT & Auth context
-│   │   └── styles/                # Design tokens and shared theme exports
-│   ├── index.html
-│   └── package.json
-│
-├── ml-service/
-│   ├── app.py                     # Flask entry point
-│   ├── routes/                    # Prediction & report endpoints
-│   ├── services/                  # Forecast & analytics logic
-│   ├── trained_models/            # Prophet model registry
-│   └── requirements.txt
-│
-├── docker-compose.yml             # PostgreSQL + Redis containers
-├── .gitignore                     # Git configuration (CSV/backup safe)
-└── README.md                      # This file
-```
-
-## 🔐 Security Features
-
-| Feature | Implementation | Status |
-|---------|----------------|--------|
-| **HTTPS/TLS** | Nginx reverse proxy (Phase 6) | ⏳ In Progress |
-| **JWT Auth** | 8-hour expiring tokens | ✅ Active |
-| **Password Hashing** | bcryptjs (10 salt rounds) | ✅ Active |
-| **Rate Limiting** | Nginx zone-based (100r/m general, 10r/m auth) | ✅ Active |
-| **CORS** | Origin whitelist (http://localhost:5174) | ✅ Active |
-| **Input Validation** | Joi schemas on all endpoints | ✅ Active |
-| **SQL Injection** | Prisma parameterized queries | ✅ Active |
-| **Audit Trail** | Immutable action logs in PostgreSQL | ✅ Active |
-| **Soft Deletes** | Data preservation & recovery | ✅ Active |
-
-## 📊 Database Schema
-
-**9 Core Models:**
-- **User** - App users with roles (admin, manager, user) & hashed passwords
-- **Category** - Product categories with soft delete
-- **Brand** - Product brands linked to categories
-- **Model** - Product models linked to brands
-- **Variant** - Product variants with stock & pricing
-- **Product** - Product catalog with related variants
-- **Sale** - Sales transactions with invoices & user tracking
-- **Expense** - Expense records with categories & receipts
-- **AuditLog** - Immutable action history for compliance
-
-**Key Features:**
-- Timestamps (created_at, updated_at) on all models
-- Soft deletes (is_deleted boolean) for data recovery
-- User ownership tracking (createdBy field)
-- Relationship validation via foreign keys
-- Indexes on frequently-queried fields (user_id, category_id, etc.)
-
-## 🔄 API Endpoints
-
-### Authentication
-```
-POST   /api/auth/register              - User registration
-POST   /api/auth/login                 - User login (returns JWT)
-POST   /api/auth/refresh              - Refresh JWT token
-```
-
-### Inventory Management
-```
-GET    /api/categories                 - List categories
-POST   /api/categories                 - Create category
-GET    /api/brands                     - List brands
-POST   /api/brands                     - Create brand
-GET    /api/models                     - List models
-POST   /api/models                     - Create model
-GET    /api/variants                   - List variants with stock
-POST   /api/variants                   - Create variant
-GET    /api/products                   - List products
-POST   /api/products                   - Create product
-```
-
-### Sales & Transactions
-```
-GET    /api/sales                      - List sales with invoices
-POST   /api/sales                      - Create sale (generates invoice)
-PUT    /api/sales/:id                  - Update sale status
-GET    /api/expenses                   - List expenses
-POST   /api/expenses                   - Create expense (upload receipt)
-```
-
-### Analytics
-```
-GET    /api/reports/sales-summary      - Sales dashboard metrics
-GET    /api/reports/inventory-status   - Stock levels & alerts
-POST   /api/predict/demand             - ML demand forecast (Phase 6)
-```
-
-### Audit & Compliance
-```
-GET    /api/audit/logs                 - Audit trail (admin only)
-GET    /api/users                      - User list (role-based)
-```
-
-## 🧪 Testing & Validation
-
-### Test Coverage (Phase 7 - Complete)
-**Current Metrics:**
-- ✅ **Statements:** 82.32% (Target: 75-80%, EXCEEDED)
-- ✅ **Lines:** 82.77% (Target: 75-80%, EXCEEDED)
-- ✅ **Functions:** 69.81%
-- ✅ **Branches:** 69.45%
-- ✅ **Test Suites:** 50
-- ✅ **Total Tests:** 501+ passing
-
-**Test Breakdown:**
-- **Controllers** (12 files): audit, auth, brand, category, expense, invoice, model, product, report, sales, variant
-- **Middleware** (7 files): auditLogger, authMiddleware, cache-invalidation, expenseUpload, roleMiddleware, validation
-- **Routes** (6 files): brand, category, model, route-registration, user, variant
-- **Services** (4 files): logger, pdf, session + health checks
-- **Utils** (2 files): numberFormat, otp.store
-- **Integration** (5 files): auth, expense, product, sales + helpers
-
-### Running Tests
-```bash
-# Run all tests
-cd backend
+# Root
 npm test
 
-# Run with coverage report
+# Backend
+cd backend
 npm run test:coverage
 
-# Watch mode (auto-rerun on changes)
-npm test -- --watch
-
-# Run specific test file
-npm test -- auth.controller.test.js
-
-# View coverage HTML report
-open coverage/lcov-report/index.html
+# Frontend
+cd ../frontend
+npm run lint
+npm run build
+npm run test:coverage
 ```
 
-### Input Validation Coverage
-- ✅ Email format validation
-- ✅ Numeric field range checking (prices, quantities)
-- ✅ String length constraints
-- ✅ Required field enforcement
-- ✅ Unknown field stripping
-- ✅ Type coercion testing
-- ✅ Valid inputs: 201 Created
-- ✅ Invalid inputs: 400 Bad Request with field-level errors
-- ✅ Missing fields: 400 with required field feedback
-- ✅ Type mismatches: 400 with type error messages
+### Coverage thresholds in config
 
-**Smoke Tests Passed:**
-- ✅ Backend health check: 200 OK
-- ✅ Frontend loads: 200 OK
-- ✅ ML service responsive: 200 OK
-- ✅ Database connections: Active
-- ✅ Rate limiting: 429 after threshold
-- ✅ JWT token validation: Enforced
+- Backend jest threshold: 60% global branches/functions/lines/statements
+- Frontend jest threshold: 50% global branches/functions/lines/statements
 
-## 📦 Deployment
+## Deployment Notes
 
-### Development
-```bash
-npm run dev        # Backend (nodemon)
-npm run dev        # Frontend (Vite)
-python app.py      # ML service
+### Docker Compose stack
+
+`docker-compose.yml` defines:
+
+- PostgreSQL
+- Redis
+- Nginx
+- Backend instances: `backend_1`, `backend_2`, `backend_3`
+- Frontend dev container
+- Backend test runner profile
+
+### Nginx behavior
+
+`nginx.conf` currently provides:
+
+- Upstream load balancing for backend instances
+- Rate limiting (`general_limit`, `auth_limit`)
+- Security headers
+- `/api/` and `/uploads/` proxying to backend upstream
+
+If you plan SPA-first production serving via Nginx root (`/`), review and adjust the current root location block for your target deployment model.
+
+## Troubleshooting
+
+### CORS failures in local dev
+
+If frontend runs on 5173 while backend allows only 5174, update `backend/.env`:
+
+```env
+CORS_ORIGINS=http://localhost:5173,http://localhost:5174
 ```
 
-### Production (Phase 6)
-```bash
-docker compose -f docker-compose.prod.yml up -d
-```
+### Prisma engine issues in Alpine containers
 
-**Planned Production Features:**
-- Nginx reverse proxy with load balancing
-- Multi-instance backend scaling (3+ containers)
-- Redis-backed session management
-- SSL/TLS certificate management
-- CloudWatch/ELK centralized logging
-- Automated health checks & failover
+The compose file sets `PRISMA_QUERY_ENGINE_LIBRARY` for linux-musl compatibility. Keep this value aligned with Prisma client output when upgrading Prisma.
 
-## 🚦 Phase Progress
+### Login loop / unauthorized responses
 
-| Phase | Focus | Status | Details |
-|-------|-------|--------|---------|
-| **Phase 1** | Request Security | ✅ Complete | CORS, headers, HTTPS ready |
-| **Phase 2** | Rate Limiting & Auth | ✅ Complete | JWT + bcrypt + rate limiter |
-| **Phase 3** | Audit Logging | ✅ Complete | CSV→PostgreSQL action trails |
-| **Phase 4** | Structured Logging & Validation | ✅ Complete | Pino + Joi schemas |
-| **Phase 5** | Database Migration | ✅ Complete | PostgreSQL + Prisma ORM |
-| **Phase 6.2** | Nginx Reverse Proxy | ✅ Complete | Load balancing, health checks, SSL ready |
-| **Phase 6.3** | Multi-Instance Orchestration | ✅ Configured | 3 replicas + Nginx load balancing ready in docker-compose |
-| **Phase 6.4** | Session & Cache Management | 📋 Planned | Redis sessions, cache invalidation |
-| **Phase 7** | Testing & Coverage | ✅ Complete | 82%+ coverage, 501 tests, 50 suites |
-| **Phase 8** | Frontend Enhancements | 📋 Planned | UI/UX modernization (React 19, modern design) |
-| **Phase 9** | ML Model Versioning | 📋 Planned | Model registry, A/B testing |
-| **Phase 10** | Operations Runbooks | 📋 Planned | Deployment guides, SRE |
+- Confirm `JWT_SECRET` is identical for all backend instances
+- Clear browser storage keys (`token`, `user`)
+- Re-authenticate
 
-## 🛠️ Development Workflows
+### Service startup delays in compose
 
-### Adding a New Endpoint
-1. Update `prisma/schema.prisma` if data structure needed
-2. Run `npx prisma migrate dev --name feature_name`
-3. Implement controller logic with Prisma queries
-4. Wire route in `src/routes/*.js`
-5. Add Joi validation schema if input required
-6. Test with curl/Postman
+Backend containers install dependencies on startup (`npm install && npm start`). First boot may be slow.
 
-### Database Changes
-```bash
-# After editing schema.prisma
-npx prisma migrate dev --name descriptive_name
-npx prisma generate              # Regenerate Prisma client
-```
+## Documentation Index
 
-### Debugging
-```bash
-# View current migrations
-npx prisma migrate resolve --preview
+- Frontend implementation guide: `frontend/README.md`
+- Frontend design system: `frontend/docs/DESIGN_SYSTEM.md`
+- Frontend refactor process: `frontend/docs/REFACTORING_GUIDE.md`
+- Component catalog: `frontend/src/components/README.md`
+- ML service guide: `ml-service/README.md`
+- Deployment notes: `PHASE_6_DEPLOYMENT.md`
+- Testing notes: `PHASE_7_TESTING.md`
 
-# Reset database (dev only)
-npx prisma migrate reset
+## Contributing
 
-# View database GUI
-npx prisma studio
-```
+1. Create a branch for your change.
+2. Keep updates scoped and testable.
+3. Run the quality checks relevant to changed services.
+4. Open a pull request with change summary and verification notes.
 
-## 📝 Important Files
+## License
 
-| File | Purpose |
-|------|---------|
-| `backend/src/app.js` | Express app initialization & middleware |
-| `backend/src/server.js` | Server entry point |
-| `backend/prisma/schema.prisma` | Database schema definition |
-| `backend/src/services/prisma.service.js` | Prisma client singleton |
-| `backend/src/services/csv.service.js` | CSV read/write utilities (legacy) |
-| `backend/src/middleware/authMiddleware.js` | JWT validation |
-| `backend/src/middleware/validation.middleware.js` | Joi input validation |
-| `backend/src/middleware/auditLogger.js` | Action logging |
-| `docker-compose.yml` | PostgreSQL & Redis container definitions |
-| `frontend/src/services/api.js` | Axios API client |
-| `frontend/src/auth/authContext.jsx` | JWT & auth state management |
-
-## 🆘 Troubleshooting
-
-### Backend won't start
-```bash
-# Check if port 5000 is in use
-netstat -ano | findstr :5000
-
-# Clear node_modules & reinstall
-rm -r node_modules
-npm install
-npm run dev
-```
-
-### Database connection errors
-```bash
-# Verify PostgreSQL is running
-docker ps | grep postgres
-
-# Check connection string in .env
-cat .env | grep DATABASE_URL
-
-# Reset migrations
-npx prisma migrate resolve --rolled-back
-npx prisma migrate deploy
-```
-
-### Frontend API errors
-```bash
-# Verify backend is running on 5000
-curl http://localhost:5000/api/health
-
-# Check CORS_ORIGINS in backend .env
-# Should include http://localhost:5174
-```
-
-### Rate limiting issues
-```bash
-# View Redis keys
-docker exec -it redis redis-cli KEYS "*"
-
-# Clear all Redis data
-docker exec -it redis redis-cli FLUSHALL
-```
-
-## 🤝 Contributing
-
-1. Create feature branch: `git checkout -b feature/your-feature`
-2. Make changes following existing patterns
-3. Commit with clear messages: `git commit -m "Add: feature description"`
-4. Push to GitHub: `git push origin feature/your-feature`
-5. Create Pull Request with testing evidence
-
-## 📄 License
-
-Internal Infosys project - All rights reserved.
-
-## 💬 Support
-
-For questions or issues:
-- Check existing documentation in Phase notes
-- Review code comments in service files
-- Consult database schema in `prisma/schema.prisma`
-- Review API routes in `backend/src/routes/`
+Internal Infosys project. All rights reserved.
 
 ---
 
-**Last Updated:** March 30, 2026  
-**Status:** Phase 7 Testing Complete, Phase 8 Frontend Modernization Next  
-**Version:** 1.0.0  
-**Test Coverage:** 82.32% statements, 82.77% lines (501 tests across 50 suites)
+Last updated: 2026-04-06
