@@ -17,16 +17,48 @@ jest.mock("../../services/prisma.service", () => mockPrisma);
 
 const reportController = require("../../controllers/report.controller");
 
+const REPORT_ENV_KEYS = [
+  "REPORT_METRIC_MODE",
+  "REPORT_RECONCILIATION_TOLERANCE",
+  "REPORT_V2_CUTOVER_ENABLED",
+  "REPORT_V2_CUTOVER_WINDOW",
+  "REPORT_V2_CUTOVER_MIN_SAMPLES",
+  "REPORT_V2_CUTOVER_MIN_PASS_RATE",
+];
+
+const resetReportEnv = () => {
+  for (const key of REPORT_ENV_KEYS) {
+    delete process.env[key];
+  }
+};
+
 describe("Report Controller", () => {
   let res;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    resetReportEnv();
+
+    mockPrisma.sale.aggregate.mockResolvedValue({
+      _sum: { total: 0 },
+      _count: 0,
+    });
+    mockPrisma.sale.findMany.mockResolvedValue([]);
+    mockPrisma.expense.aggregate.mockResolvedValue({
+      _sum: { amount: 0 },
+      _count: 0,
+    });
+    mockPrisma.expense.findMany.mockResolvedValue([]);
+    mockPrisma.variant.findMany.mockResolvedValue([]);
 
     res = {
       json: jest.fn().mockReturnThis(),
       status: jest.fn().mockReturnThis(),
     };
+  });
+
+  afterEach(() => {
+    resetReportEnv();
   });
 
   describe("getSummary", () => {
@@ -37,10 +69,10 @@ describe("Report Controller", () => {
         _sum: { total: 10000 },
         _count: 5,
       });
-      mockPrisma.expense.aggregate.mockResolvedValue({
-        _sum: { amount: 2000 },
-        _count: 3,
-      });
+      mockPrisma.expense.findMany.mockResolvedValue([
+        { amount: 500, category: "Other" },
+        { amount: 1500, category: "Shop rent" },
+      ]);
 
       await reportController.getSummary(req, res);
 
@@ -49,7 +81,13 @@ describe("Report Controller", () => {
           range: "monthly",
           totalSales: 10000,
           totalExpenses: 2000,
+          cogsFromExpenses: 0,
+          operatingExpenses: 2000,
           profit: 8000,
+          profitV2: 8000,
+          netProfit: 8000,
+          defaultProfitMetric: "profit",
+          reconciliation: expect.objectContaining({ isReconciled: true }),
           profitMargin: "80.00",
         })
       );
@@ -68,10 +106,10 @@ describe("Report Controller", () => {
         _sum: { total: 50000 },
         _count: 20,
       });
-      mockPrisma.expense.aggregate.mockResolvedValue({
-        _sum: { amount: 10000 },
-        _count: 10,
-      });
+      mockPrisma.expense.findMany.mockResolvedValue([
+        { amount: 6000, category: "Buying stocks" },
+        { amount: 4000, category: "Shop rent" },
+      ]);
 
       await reportController.getSummary(req, res);
 
@@ -80,7 +118,93 @@ describe("Report Controller", () => {
           range: "custom",
           totalSales: 50000,
           totalExpenses: 10000,
+          cogsFromExpenses: 6000,
+          operatingExpenses: 4000,
           profit: 40000,
+          profitV2: 40000,
+        })
+      );
+    });
+
+    it("promotes profitV2 in dual mode when cutover window is accepted", async () => {
+      process.env.REPORT_METRIC_MODE = "dual";
+      process.env.REPORT_V2_CUTOVER_ENABLED = "true";
+      process.env.REPORT_V2_CUTOVER_WINDOW = "daily";
+      process.env.REPORT_V2_CUTOVER_MIN_SAMPLES = "2";
+      process.env.REPORT_V2_CUTOVER_MIN_PASS_RATE = "1";
+
+      const req = { query: { range: "custom", startDate: "2026-03-01", endDate: "2026-03-02" } };
+
+      mockPrisma.sale.aggregate.mockResolvedValue({
+        _sum: { total: 2000 },
+        _count: 2,
+      });
+      mockPrisma.sale.findMany.mockResolvedValue([
+        { date: new Date("2026-03-01T08:00:00.000Z"), total: 1200 },
+        { date: new Date("2026-03-02T08:00:00.000Z"), total: 800 },
+      ]);
+      mockPrisma.expense.findMany.mockResolvedValue([
+        { date: new Date("2026-03-01T10:00:00.000Z"), amount: 300, category: "Shop rent" },
+        { date: new Date("2026-03-02T10:00:00.000Z"), amount: 100, category: "Other" },
+      ]);
+
+      await reportController.getSummary(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metricsMode: "dual",
+          defaultProfitMetric: "profitV2",
+          profit: 1600,
+          profitV2: 1600,
+          netProfit: 1600,
+          cutover: expect.objectContaining({
+            enabled: true,
+            window: "daily",
+            evaluatedSamples: 2,
+            reconciledSamples: 2,
+            failedSamples: 0,
+            passRate: 1,
+            accepted: true,
+            promoted: true,
+          }),
+        })
+      );
+    });
+
+    it("keeps legacy default metric in dual mode when cutover minimum samples is unmet", async () => {
+      process.env.REPORT_METRIC_MODE = "dual";
+      process.env.REPORT_V2_CUTOVER_ENABLED = "true";
+      process.env.REPORT_V2_CUTOVER_WINDOW = "daily";
+      process.env.REPORT_V2_CUTOVER_MIN_SAMPLES = "5";
+      process.env.REPORT_V2_CUTOVER_MIN_PASS_RATE = "1";
+
+      const req = { query: { range: "custom", startDate: "2026-03-01", endDate: "2026-03-02" } };
+
+      mockPrisma.sale.aggregate.mockResolvedValue({
+        _sum: { total: 1500 },
+        _count: 2,
+      });
+      mockPrisma.sale.findMany.mockResolvedValue([
+        { date: new Date("2026-03-01T08:00:00.000Z"), total: 900 },
+        { date: new Date("2026-03-02T08:00:00.000Z"), total: 600 },
+      ]);
+      mockPrisma.expense.findMany.mockResolvedValue([
+        { date: new Date("2026-03-01T10:00:00.000Z"), amount: 200, category: "Buying stocks" },
+        { date: new Date("2026-03-02T10:00:00.000Z"), amount: 100, category: "Shop rent" },
+      ]);
+
+      await reportController.getSummary(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metricsMode: "dual",
+          defaultProfitMetric: "profit",
+          cutover: expect.objectContaining({
+            enabled: true,
+            evaluatedSamples: 2,
+            accepted: false,
+            promoted: false,
+          }),
         })
       );
     });
@@ -92,10 +216,7 @@ describe("Report Controller", () => {
         _sum: { total: null },
         _count: 0,
       });
-      mockPrisma.expense.aggregate.mockResolvedValue({
-        _sum: { amount: null },
-        _count: 0,
-      });
+      mockPrisma.expense.findMany.mockResolvedValue([]);
 
       await reportController.getSummary(req, res);
 
@@ -130,10 +251,9 @@ describe("Report Controller", () => {
         _sum: { total: 100000 },
         _count: 50,
       });
-      mockPrisma.expense.aggregate.mockResolvedValue({
-        _sum: { amount: 30000 },
-        _count: 30,
-      });
+      mockPrisma.expense.findMany.mockResolvedValue([
+        { amount: 30000, category: "Shop rent" },
+      ]);
 
       await reportController.getSummary(req, res);
 
@@ -153,10 +273,7 @@ describe("Report Controller", () => {
         _sum: { total: 5000 },
         _count: 2,
       });
-      mockPrisma.expense.aggregate.mockResolvedValue({
-        _sum: { amount: 1000 },
-        _count: 1,
-      });
+      mockPrisma.expense.findMany.mockResolvedValue([{ amount: 1000, category: "Other" }]);
 
       await reportController.getSummary(req, res);
 
@@ -175,10 +292,7 @@ describe("Report Controller", () => {
         _sum: { total: 15000 },
         _count: 8,
       });
-      mockPrisma.expense.aggregate.mockResolvedValue({
-        _sum: { amount: 3000 },
-        _count: 4,
-      });
+      mockPrisma.expense.findMany.mockResolvedValue([{ amount: 3000, category: "Other" }]);
 
       await reportController.getSummary(req, res);
 
@@ -192,10 +306,7 @@ describe("Report Controller", () => {
         _sum: { total: 1000000 },
         _count: 500,
       });
-      mockPrisma.expense.aggregate.mockResolvedValue({
-        _sum: { amount: 200000 },
-        _count: 200,
-      });
+      mockPrisma.expense.findMany.mockResolvedValue([{ amount: 200000, category: "Other" }]);
 
       await reportController.getSummary(req, res);
 
@@ -217,8 +328,8 @@ describe("Report Controller", () => {
         { total: 3000, quantity: 5, variant: {} },
       ]);
       mockPrisma.expense.findMany.mockResolvedValue([
-        { amount: 1000 },
-        { amount: 500 },
+        { amount: 1000, category: "Buying stocks" },
+        { amount: 500, category: "Shop rent" },
       ]);
 
       await reportController.getQuickStats(req, res);
@@ -229,7 +340,13 @@ describe("Report Controller", () => {
           totalSales: 8000,
           totalUnits: 15,
           totalExpenses: 1500,
+          cogsFromExpenses: 1000,
+          operatingExpenses: 500,
           profit: 6500,
+          profitV2: 6500,
+          netProfit: 6500,
+          defaultProfitMetric: "profit",
+          reconciliation: expect.objectContaining({ isReconciled: true }),
           profitMargin: 81.25,
         })
       );
@@ -412,14 +529,65 @@ describe("Report Controller", () => {
         { date: new Date("2026-03-01"), total: 10000 },
       ]);
       mockPrisma.expense.findMany.mockResolvedValue([
-        { date: new Date("2026-03-01"), amount: 2000 },
+        { date: new Date("2026-03-01"), amount: 1200, category: "Buying stocks" },
+        { date: new Date("2026-03-02"), amount: 800, category: "Shop rent" },
       ]);
 
       await reportController.getProfitTrend(req, res);
 
       const calls = res.json.mock.calls[0][0];
       expect(Array.isArray(calls)).toBe(true);
-      expect(calls[0]).toHaveProperty("profit");
+      expect(calls[0]).toEqual(
+        expect.objectContaining({
+          sales: 10000,
+          expenses: 2000,
+          cogsFromExpenses: 1200,
+          operatingExpenses: 800,
+          profit: 8000,
+          profitV2: 8000,
+          defaultProfitMetric: "profit",
+          metricsMode: "legacy",
+        })
+      );
+    });
+
+    it("returns promoted cutover metadata in dual mode profit trend", async () => {
+      process.env.REPORT_METRIC_MODE = "dual";
+      process.env.REPORT_V2_CUTOVER_ENABLED = "true";
+      process.env.REPORT_V2_CUTOVER_WINDOW = "monthly";
+      process.env.REPORT_V2_CUTOVER_MIN_SAMPLES = "1";
+      process.env.REPORT_V2_CUTOVER_MIN_PASS_RATE = "1";
+
+      const req = { query: { range: "monthly" } };
+
+      mockPrisma.sale.findMany.mockResolvedValue([
+        { date: new Date("2026-03-03"), total: 3000 },
+      ]);
+      mockPrisma.expense.findMany.mockResolvedValue([
+        { date: new Date("2026-03-03"), amount: 700, category: "Shop rent" },
+      ]);
+
+      await reportController.getProfitTrend(req, res);
+
+      const response = res.json.mock.calls[0][0];
+      expect(response).toHaveLength(1);
+      expect(response[0]).toEqual(
+        expect.objectContaining({
+          profit: 2300,
+          profitV2: 2300,
+          netProfit: 2300,
+          defaultProfitMetric: "profitV2",
+          metricsMode: "dual",
+          cutover: expect.objectContaining({
+            enabled: true,
+            window: "monthly",
+            evaluatedSamples: 1,
+            passRate: 1,
+            accepted: true,
+            promoted: true,
+          }),
+        })
+      );
     });
 
     it("should handle Prisma error in getProfitTrend", async () => {
@@ -483,13 +651,16 @@ describe("Report Controller", () => {
       const req = { query: { range: "monthly" } };
 
       mockPrisma.expense.findMany.mockResolvedValue([
-        { date: new Date("2026-03-01"), amount: 5000 },
+        { date: new Date("2026-03-01"), category: "Salary", amount: 5000 },
       ]);
 
       await reportController.getExpenseAnalytics(req, res);
 
       const calls = res.json.mock.calls[0][0];
-      expect(Array.isArray(calls)).toBe(true);
+      expect(calls).toHaveProperty("trend");
+      expect(calls).toHaveProperty("distribution");
+      expect(Array.isArray(calls.trend)).toBe(true);
+      expect(Array.isArray(calls.distribution)).toBe(true);
     });
 
     it("should handle Prisma error in getExpenseAnalytics", async () => {

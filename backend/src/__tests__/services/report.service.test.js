@@ -30,10 +30,28 @@ jest.mock('../../services/prisma.service', () => {
 describe('Report Controller - Business Logic', () => {
   let reportController;
 
+  const createMockRes = () => ({
+    status: jest.fn().mockReturnThis(),
+    json: jest.fn(),
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
+    delete process.env.REPORT_METRIC_MODE;
+    delete process.env.REPORT_V2_CUTOVER_ENABLED;
+    delete process.env.REPORT_V2_CUTOVER_WINDOW;
+    delete process.env.REPORT_V2_CUTOVER_MIN_SAMPLES;
+    delete process.env.REPORT_V2_CUTOVER_MIN_PASS_RATE;
+
     delete require.cache[require.resolve('../../controllers/report.controller')];
     reportController = require('../../controllers/report.controller');
+
+    mockPrisma.sale.aggregate.mockResolvedValue({
+      _sum: { total: 0 },
+      _count: 0,
+    });
+    mockPrisma.sale.findMany.mockResolvedValue([]);
+    mockPrisma.expense.findMany.mockResolvedValue([]);
   });
 
   describe('Date Range Calculation (getDateRange)', () => {
@@ -43,17 +61,17 @@ describe('Report Controller - Business Logic', () => {
         _count: 5,
       });
 
-      mockPrisma.expense.aggregate.mockResolvedValue({
-        _sum: { amount: 500 },
-        _count: 2,
-      });
+      mockPrisma.expense.findMany.mockResolvedValue([
+        { amount: 500, category: 'Other' },
+      ]);
 
       const mockReq = { query: { range: 'daily' } };
-      const mockRes = { json: jest.fn() };
+      const mockRes = createMockRes();
 
       await reportController.getSummary(mockReq, mockRes);
 
       expect(mockPrisma.sale.aggregate).toHaveBeenCalled();
+      expect(mockPrisma.expense.findMany).toHaveBeenCalled();
     });
 
     it('should handle weekly range queries', async () => {
@@ -62,13 +80,12 @@ describe('Report Controller - Business Logic', () => {
         _count: 10,
       });
 
-      mockPrisma.expense.aggregate.mockResolvedValue({
-        _sum: { amount: 1000 },
-        _count: 5,
-      });
+      mockPrisma.expense.findMany.mockResolvedValue([
+        { amount: 1000, category: 'Shop rent' },
+      ]);
 
       const mockReq = { query: { range: 'weekly' } };
-      const mockRes = { json: jest.fn() };
+      const mockRes = createMockRes();
 
       await reportController.getSummary(mockReq, mockRes);
 
@@ -81,13 +98,12 @@ describe('Report Controller - Business Logic', () => {
         _count: 30,
       });
 
-      mockPrisma.expense.aggregate.mockResolvedValue({
-        _sum: { amount: 5000 },
-        _count: 20,
-      });
+      mockPrisma.expense.findMany.mockResolvedValue([
+        { amount: 5000, category: 'Buying stocks' },
+      ]);
 
       const mockReq = { query: { range: 'monthly' } };
-      const mockRes = { json: jest.fn() };
+      const mockRes = createMockRes();
 
       await reportController.getSummary(mockReq, mockRes);
 
@@ -100,13 +116,12 @@ describe('Report Controller - Business Logic', () => {
         _count: 300,
       });
 
-      mockPrisma.expense.aggregate.mockResolvedValue({
-        _sum: { amount: 50000 },
-        _count: 200,
-      });
+      mockPrisma.expense.findMany.mockResolvedValue([
+        { amount: 50000, category: 'Shop rent' },
+      ]);
 
       const mockReq = { query: { range: 'yearly' } };
-      const mockRes = { json: jest.fn() };
+      const mockRes = createMockRes();
 
       await reportController.getSummary(mockReq, mockRes);
 
@@ -121,18 +136,27 @@ describe('Report Controller - Business Logic', () => {
         _count: 10,
       });
 
-      mockPrisma.expense.aggregate.mockResolvedValue({
-        _sum: { amount: 2000 },
-        _count: 5,
-      });
+      mockPrisma.expense.findMany.mockResolvedValue([
+        { amount: 1200, category: 'Buying stocks' },
+        { amount: 800, category: 'Shop rent' },
+      ]);
 
       const mockReq = { query: { range: 'monthly' } };
-      const mockRes = { json: jest.fn() };
+      const mockRes = createMockRes();
 
       await reportController.getSummary(mockReq, mockRes);
 
       expect(mockPrisma.sale.aggregate).toHaveBeenCalled();
-      expect(mockRes.json).toHaveBeenCalled();
+      expect(mockRes.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          totalSales: 10000,
+          totalExpenses: 2000,
+          cogsFromExpenses: 1200,
+          operatingExpenses: 800,
+          profit: 8000,
+          profitV2: 8000,
+        })
+      );
     });
 
     it('should handle zero sales', async () => {
@@ -141,17 +165,20 @@ describe('Report Controller - Business Logic', () => {
         _count: 0,
       });
 
-      mockPrisma.expense.aggregate.mockResolvedValue({
-        _sum: { amount: null },
-        _count: 0,
-      });
+      mockPrisma.expense.findMany.mockResolvedValue([]);
 
       const mockReq = { query: { range: 'daily' } };
-      const mockRes = { json: jest.fn() };
+      const mockRes = createMockRes();
 
       await reportController.getSummary(mockReq, mockRes);
 
-      expect(mockRes.json).toHaveBeenCalled();
+      expect(mockRes.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          totalSales: 0,
+          totalExpenses: 0,
+          profitMargin: 0,
+        })
+      );
     });
 
     it('should exclude deleted records from calculations', async () => {
@@ -160,18 +187,25 @@ describe('Report Controller - Business Logic', () => {
         _count: 5,
       });
 
-      mockPrisma.expense.aggregate.mockResolvedValue({
-        _sum: { amount: 500 },
-        _count: 2,
-      });
+      mockPrisma.expense.findMany.mockResolvedValue([
+        { amount: 500, category: 'Other' },
+      ]);
 
       const mockReq = { query: { range: 'monthly' } };
-      const mockRes = { json: jest.fn() };
+      const mockRes = createMockRes();
 
       await reportController.getSummary(mockReq, mockRes);
 
       // Verify is_deleted filter was applied
       expect(mockPrisma.sale.aggregate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            is_deleted: false,
+          }),
+        })
+      );
+
+      expect(mockPrisma.expense.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             is_deleted: false,
@@ -188,7 +222,7 @@ describe('Report Controller - Business Logic', () => {
       );
 
       const mockReq = { query: { range: 'monthly' } };
-      const mockRes = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+      const mockRes = createMockRes();
 
       await reportController.getSummary(mockReq, mockRes);
 

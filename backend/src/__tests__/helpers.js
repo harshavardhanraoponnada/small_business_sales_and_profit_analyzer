@@ -292,7 +292,7 @@ const assertions = {
    */
   expectForbiddenError: (response) => {
     expect(response.status).toBe(403);
-    expect(response.body.message).toMatch(/forbidden|permission|role/i);
+    expect(response.body.message).toMatch(/forbidden|permission|role|access denied/i);
   },
 
   /**

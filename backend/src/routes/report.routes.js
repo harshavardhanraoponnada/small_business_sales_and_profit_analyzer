@@ -63,6 +63,13 @@ router.post(
 );
 
 router.get(
+  "/scheduler/status",
+  auth,
+  role("OWNER"),
+  reportController.getSchedulerStatus
+);
+
+router.get(
   "/schedules",
   auth,
   role("OWNER"),
