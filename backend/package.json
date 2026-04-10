@@ -5,10 +5,15 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "expenses:backfill-categories": "node src/scripts/backfillExpenseCategories.js",
+    "expenses:backfill-categories:dry": "node src/scripts/backfillExpenseCategories.js --dry-run",
     "test": "jest --detectOpenHandles",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --detectOpenHandles",
-    "test:integration": "jest --testPathPattern=integration --runInBand"
+    "test:integration": "jest --testPathPattern=integration --runInBand",
+    "test:integration:expense": "jest src/__tests__/integration/expense.integration.test.js --runInBand",
+    "test:integration:report": "jest src/__tests__/integration/report.integration.test.js --runInBand",
+    "test:scripts": "jest src/__tests__/scripts --runInBand"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

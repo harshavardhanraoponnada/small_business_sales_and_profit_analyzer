@@ -1,0 +1,48 @@
+name: Backend Tests Split
+
+on:
+  pull_request:
+    paths:
+      - backend/**
+      - .github/workflows/backend-tests-split.yml
+  push:
+    branches:
+      - main
+    paths:
+      - backend/**
+      - .github/workflows/backend-tests-split.yml
+  workflow_dispatch:
+
+jobs:
+  backend-tests:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Report Integration
+            command: npm run test:integration:report
+          - name: Expense Integration
+            command: npm run test:integration:expense
+          - name: Script Tests
+            command: npm run test:scripts
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ${{ matrix.name }}
+        run: ${{ matrix.command }}
