@@ -3,7 +3,7 @@ const router = express.Router();
 
 const auth = require("../middleware/authMiddleware");
 const role = require("../middleware/roleMiddleware");
-const { addSale, getSales } = require("../controllers/sales.controller");
+const { addSale, getSales, updateSale, deleteSale } = require("../controllers/sales.controller");
 const audit = require("../middleware/auditLogger");
 const { validate, saleSchema } = require("../middleware/validation.middleware");
 
@@ -26,6 +26,22 @@ router.post(
     return "Sale recorded";
   }),
   addSale
+);
+
+router.put(
+  "/:id",
+  auth,
+  role("OWNER", "ACCOUNTANT"),
+  audit("SALE_UPDATE", req => `Updated sale ${req.params.id}`),
+  updateSale
+);
+
+router.delete(
+  "/:id",
+  auth,
+  role("OWNER", "ACCOUNTANT"),
+  audit("SALE_DELETE", req => `Deleted sale ${req.params.id}`),
+  deleteSale
 );
 
 module.exports = router;

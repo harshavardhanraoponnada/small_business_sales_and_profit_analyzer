@@ -83,6 +83,7 @@ describe('Product Controller', () => {
       const req = {
         body: {
           name: 'Phone',
+          sku: ' SKU-PHONE-001 ',
           brand: 'BrandX',
           category_id: 'c1',
           stock: 10,
@@ -96,7 +97,14 @@ describe('Product Controller', () => {
       await controller.addProduct(req, res);
 
       expect(mockPriceTransform.packPrices).toHaveBeenCalledWith({ purchase_price: 200, selling_price: 300 });
-      expect(mockPrisma.product.create).toHaveBeenCalled();
+      expect(mockPrisma.product.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            name: 'Phone',
+            sku: 'SKU-PHONE-001',
+          }),
+        })
+      );
       expect(mockAuditService.logAction).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({ message: 'Product added', product: created });
@@ -125,6 +133,7 @@ describe('Product Controller', () => {
         params: { id: 'p1' },
         body: {
           name: 'Phone Pro',
+          sku: ' SKU-PRO-001 ',
           stock: '15',
           purchase_price: 220,
           selling_price: 330,
@@ -140,6 +149,7 @@ describe('Product Controller', () => {
           where: { id: 'p1' },
           data: expect.objectContaining({
             name: 'Phone Pro',
+            sku: 'SKU-PRO-001',
             stock: 15,
             prices: { purchase_price: 220, selling_price: 330 },
           }),

@@ -2,6 +2,19 @@ const prisma = require("../services/prisma.service");
 const auditService = require("../services/audit.service");
 const { transformProducts, transformProduct, packPrices } = require("../services/priceTransform.service");
 
+const isSkuUniqueViolation = (error) => {
+  if (!error || error.code !== "P2002") {
+    return false;
+  }
+
+  const target = error.meta?.target;
+  if (Array.isArray(target)) {
+    return target.includes("sku");
+  }
+
+  return String(target || "").includes("sku");
+};
+
 exports.getProducts = async (req, res) => {
   try {
     const { includeDeleted } = req.query;
@@ -25,6 +38,7 @@ exports.addProduct = async (req, res) => {
     const newProduct = await prisma.product.create({
       data: {
         name: req.body.name,
+        sku: String(req.body.sku).trim(),
         brand: req.body.brand,
         category_id: req.body.category_id,
         stock: req.body.stock || 0,
@@ -46,6 +60,10 @@ exports.addProduct = async (req, res) => {
     
     res.status(201).json({ message: "Product added", product: transformProduct(newProduct) });
   } catch (error) {
+    if (isSkuUniqueViolation(error)) {
+      return res.status(409).json({ message: "SKU already exists" });
+    }
+
     res.status(500).json({ message: "Failed to add product", error: error.message });
   }
 };
@@ -61,6 +79,11 @@ exports.updateProduct = async (req, res) => {
     }
 
     const updateData = { ...req.body };
+
+    if (updateData.sku !== undefined) {
+      updateData.sku = String(updateData.sku).trim();
+    }
+
     // Convert stock to number
     if (updateData.stock !== undefined) {
       updateData.stock = Number(updateData.stock);
@@ -90,6 +113,10 @@ exports.updateProduct = async (req, res) => {
     
     res.json({ message: "Product updated", product: transformProduct(updatedProduct) });
   } catch (error) {
+    if (isSkuUniqueViolation(error)) {
+      return res.status(409).json({ message: "SKU already exists" });
+    }
+
     res.status(500).json({ message: "Failed to update product", error: error.message });
   }
 };

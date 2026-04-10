@@ -34,6 +34,7 @@ describe('validation.middleware validate()', () => {
     const middleware = validate(saleSchema);
     const req = {
       body: {
+        customer_name: 'Test Customer',
         product_id: 1,
         variant_id: 2,
         selling_price: 10,
@@ -47,6 +48,7 @@ describe('validation.middleware validate()', () => {
 
     expect(next).toHaveBeenCalled();
     expect(req.body).toEqual({
+      customer_name: 'Test Customer',
       product_id: 1,
       variant_id: 2,
       selling_price: 10,
