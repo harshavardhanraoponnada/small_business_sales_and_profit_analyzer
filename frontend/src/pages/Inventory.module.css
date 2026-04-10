@@ -1,0 +1,168 @@
+@reference "tailwindcss";
+
+.inventoryContainer {
+  display: grid;
+  gap: 1rem;
+  animation: fadeIn 0.24s ease-out;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.insightsGrid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.panel {
+  border-radius: 0.9rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: color-mix(in srgb, var(--color-background, #ffffff) 86%, #ffffff);
+  padding: 1rem;
+}
+
+.panelHeader {
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panelTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgb(15 23 42);
+}
+
+.panelCount {
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.08);
+  padding: 0.15rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgb(15 23 42);
+}
+
+.alertList {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.alertItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  background: rgba(254, 242, 242, 0.6);
+  padding: 0.7rem;
+}
+
+.alertTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgb(127 29 29);
+}
+
+.alertMeta {
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: rgb(153 27 27);
+}
+
+.historyToolbar {
+  margin-bottom: 0.65rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.historyHint {
+  font-size: 0.8rem;
+  color: rgb(71 85 105);
+}
+
+.historyList {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.historyItem {
+  border-radius: 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(248, 250, 252, 0.6);
+  padding: 0.65rem 0.75rem;
+}
+
+.historyTitle {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: rgb(30 41 59);
+}
+
+.historyMeta {
+  margin-top: 0.15rem;
+  font-size: 0.74rem;
+  color: rgb(71 85 105);
+}
+
+:global(.dark) .panel {
+  border-color: rgba(71, 85, 105, 0.6);
+  background: rgba(2, 6, 23, 0.55);
+}
+
+:global(.dark) .panelTitle {
+  color: rgb(226 232 240);
+}
+
+:global(.dark) .panelCount {
+  background: rgba(148, 163, 184, 0.2);
+  color: rgb(226 232 240);
+}
+
+:global(.dark) .alertItem {
+  border-color: rgba(251, 113, 133, 0.45);
+  background: rgba(136, 19, 55, 0.25);
+}
+
+:global(.dark) .alertTitle {
+  color: rgb(254 205 211);
+}
+
+:global(.dark) .alertMeta {
+  color: rgb(251 113 133);
+}
+
+:global(.dark) .historyHint {
+  color: rgb(148 163 184);
+}
+
+:global(.dark) .historyItem {
+  border-color: rgba(71, 85, 105, 0.65);
+  background: rgba(15, 23, 42, 0.45);
+}
+
+:global(.dark) .historyTitle {
+  color: rgb(226 232 240);
+}
+
+:global(.dark) .historyMeta {
+  color: rgb(148 163 184);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
