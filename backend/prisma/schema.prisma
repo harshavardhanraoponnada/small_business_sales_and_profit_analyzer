@@ -8,6 +8,7 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 // User model - represents system users with roles
@@ -19,6 +20,8 @@ model User {
   role                    String      // OWNER, ACCOUNTANT, STAFF
   reportFrequency         String?     // DAILY, WEEKLY, MONTHLY
   reportFormat            String?     // PDF, EMAIL, EXCEL
+  reportScheduleTime      String?     // HH:MM (24-hour), e.g. 09:00
+  reportScheduleWeekday   String?     // monday..sunday (used for weekly schedules)
   receiveScheduledReports Boolean     @default(false)
   created_at              DateTime    @default(now())
   updated_at              DateTime    @updatedAt
@@ -111,6 +114,7 @@ model Variant {
 model Product {
   id                String      @id @default(cuid())
   name              String      @unique
+  sku               String      @unique
   brand            String
   category_id       String
   stock             Int         @default(0)
@@ -133,6 +137,7 @@ model Product {
 model Sale {
   id                String      @id @default(cuid())
   date              DateTime    @default(now())
+  customer_name     String?
   variant_id        String?
   product_id        String?
   quantity          Int
@@ -156,13 +161,42 @@ model Sale {
   @@index([created_at])
 }
 
+// Expense category model - dedicated taxonomy for accounting expenses
+model ExpenseCategory {
+  id                  String      @id @default(cuid())
+  key                 String      @unique
+  name                String      @unique
+  expense_group       String      // COGS, OPERATING_EXPENSE, etc.
+  affects_cogs_default Boolean    @default(false)
+  is_system           Boolean     @default(false)
+  is_active           Boolean     @default(true)
+  is_deleted          Boolean     @default(false)
+  display_order       Int         @default(0)
+  created_at          DateTime    @default(now())
+  updated_at          DateTime    @updatedAt
+
+  // Relations
+  expenses            Expense[]
+
+  @@index([is_deleted, is_active])
+  @@index([expense_group])
+  @@index([display_order])
+}
+
 // Expense model
 model Expense {
   id                String      @id @default(cuid())
   date              DateTime    @default(now())
   category          String      // RENT, UTILITIES, SUPPLIES, etc.
+  expense_category_id String?
   amount            Decimal     @db.Decimal(10, 2)
   description       String
+  vendor_name       String?
+  invoice_reference String?
+  tax_amount        Decimal?    @db.Decimal(10, 2)
+  payment_method    String?
+  affects_cogs_override Boolean?
+  receipt_file      String?
   created_by        String
   is_deleted        Boolean     @default(false)
   created_at        DateTime    @default(now())
@@ -170,8 +204,11 @@ model Expense {
 
   // Relations
   user              User        @relation(fields: [created_by], references: [id])
+  expense_category  ExpenseCategory? @relation(fields: [expense_category_id], references: [id])
 
   @@index([category])
+  @@index([expense_category_id])
+  @@index([payment_method])
   @@index([created_by])
   @@index([date])
   @@index([is_deleted])
