@@ -69,22 +69,26 @@ describe("User Routes - Preferences", () => {
   });
 
   describe("PUT /preferences/reports", () => {
-    it("should update preferences", async () => {
+    it("OWNER can update own preferences", async () => {
+      testUserRole = "OWNER";
       mockPrisma.user.update.mockResolvedValue({
         reportFrequency: "daily",
         reportFormat: "xlsx",
+        reportScheduleTime: "08:30",
+        reportScheduleWeekday: "monday",
         receiveScheduledReports: true,
       });
 
       const res = await request(app)
         .put("/api/users/preferences/reports")
-        .send({ reportFrequency: "daily", reportFormat: "xlsx" })
+        .send({ reportFrequency: "daily", reportFormat: "xlsx", reportScheduleTime: "08:30" })
         .expect(200);
 
       expect(res.body).toHaveProperty("message");
     });
 
     it("should reject invalid frequency", async () => {
+      testUserRole = "OWNER";
       await request(app)
         .put("/api/users/preferences/reports")
         .send({ reportFrequency: "invalid" })
@@ -92,13 +96,40 @@ describe("User Routes - Preferences", () => {
     });
 
     it("should reject invalid format", async () => {
+      testUserRole = "OWNER";
       await request(app)
         .put("/api/users/preferences/reports")
         .send({ reportFormat: "docx" })
         .expect(400);
     });
 
+    it("should reject invalid schedule time", async () => {
+      testUserRole = "OWNER";
+      await request(app)
+        .put("/api/users/preferences/reports")
+        .send({ reportScheduleTime: "24:99" })
+        .expect(400);
+    });
+
+    it("should reject invalid schedule weekday", async () => {
+      testUserRole = "OWNER";
+      await request(app)
+        .put("/api/users/preferences/reports")
+        .send({ reportScheduleWeekday: "funday" })
+        .expect(400);
+    });
+
+    it("USER cannot update own preferences", async () => {
+      testUserRole = "USER";
+
+      await request(app)
+        .put("/api/users/preferences/reports")
+        .send({ reportFrequency: "daily" })
+        .expect(403);
+    });
+
     it("should handle user not found", async () => {
+      testUserRole = "OWNER";
       mockPrisma.user.update.mockRejectedValue({ code: "P2025" });
 
       await request(app)
@@ -108,6 +139,7 @@ describe("User Routes - Preferences", () => {
     });
 
     it("should handle database error", async () => {
+      testUserRole = "OWNER";
       mockPrisma.user.update.mockRejectedValue(new Error("DB error"));
 
       await request(app)
@@ -122,6 +154,8 @@ describe("User Routes - Preferences", () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         reportFrequency: "weekly",
         reportFormat: "pdf",
+        reportScheduleTime: "10:15",
+        reportScheduleWeekday: "friday",
         receiveScheduledReports: true,
       });
 
@@ -136,6 +170,8 @@ describe("User Routes - Preferences", () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         reportFrequency: null,
         reportFormat: null,
+        reportScheduleTime: null,
+        reportScheduleWeekday: null,
         receiveScheduledReports: null,
       });
 
@@ -146,6 +182,8 @@ describe("User Routes - Preferences", () => {
       expect(res.body).toMatchObject({
         reportFrequency: "none",
         reportFormat: "pdf",
+        reportScheduleTime: "09:00",
+        reportScheduleWeekday: "monday",
       });
     });
 
@@ -172,6 +210,8 @@ describe("User Routes - Preferences", () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         reportFrequency: "daily",
         reportFormat: "pdf",
+        reportScheduleTime: "07:45",
+        reportScheduleWeekday: "monday",
         receiveScheduledReports: true,
       });
 
@@ -180,17 +220,11 @@ describe("User Routes - Preferences", () => {
         .expect(200);
     });
 
-    it("ACCOUNTANT can retrieve user preferences", async () => {
+    it("ACCOUNTANT cannot retrieve user preferences", async () => {
       testUserRole = "ACCOUNTANT";
-      mockPrisma.user.findUnique.mockResolvedValue({
-        reportFrequency: "weekly",
-        reportFormat: "xlsx",
-        receiveScheduledReports: false,
-      });
-
       await request(app)
         .get("/api/users/2/preferences/reports")
-        .expect(200);
+        .expect(403);
     });
 
     it("USER cannot retrieve other user preferences", async () => {
@@ -226,6 +260,8 @@ describe("User Routes - Preferences", () => {
       mockPrisma.user.update.mockResolvedValue({
         reportFrequency: "monthly",
         reportFormat: "pdf",
+        reportScheduleTime: "09:00",
+        reportScheduleWeekday: "monday",
         receiveScheduledReports: true,
       });
 
@@ -237,18 +273,12 @@ describe("User Routes - Preferences", () => {
       expect(res.body).toHaveProperty("message");
     });
 
-    it("ACCOUNTANT can update user preferences", async () => {
+    it("ACCOUNTANT cannot update user preferences", async () => {
       testUserRole = "ACCOUNTANT";
-      mockPrisma.user.update.mockResolvedValue({
-        reportFrequency: "weekly",
-        reportFormat: "pdf",
-        receiveScheduledReports: false,
-      });
-
       await request(app)
         .put("/api/users/2/preferences/reports")
         .send({ reportFrequency: "weekly" })
-        .expect(200);
+        .expect(403);
     });
 
     it("USER cannot update other user preferences", async () => {
@@ -270,11 +300,29 @@ describe("User Routes - Preferences", () => {
     });
 
     it("should reject invalid format", async () => {
-      testUserRole = "ACCOUNTANT";
+      testUserRole = "OWNER";
 
       await request(app)
         .put("/api/users/2/preferences/reports")
         .send({ reportFormat: "csv" })
+        .expect(400);
+    });
+
+    it("should reject invalid schedule time", async () => {
+      testUserRole = "OWNER";
+
+      await request(app)
+        .put("/api/users/2/preferences/reports")
+        .send({ reportScheduleTime: "25:00" })
+        .expect(400);
+    });
+
+    it("should reject invalid schedule weekday", async () => {
+      testUserRole = "OWNER";
+
+      await request(app)
+        .put("/api/users/2/preferences/reports")
+        .send({ reportScheduleWeekday: "holiday" })
         .expect(400);
     });
 
@@ -299,10 +347,12 @@ describe("User Routes - Preferences", () => {
     });
 
     it("should handle partial updates", async () => {
-      testUserRole = "ACCOUNTANT";
+      testUserRole = "OWNER";
       mockPrisma.user.update.mockResolvedValue({
         reportFrequency: "daily",
         reportFormat: "pdf",
+        reportScheduleTime: "09:00",
+        reportScheduleWeekday: "monday",
         receiveScheduledReports: true,
       });
 

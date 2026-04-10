@@ -1,9 +1,14 @@
 const app = require("./app");
+const {
+  startReportScheduler,
+  stopReportScheduler,
+} = require("./services/reportScheduler.service");
 
 const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
   console.log(`Backend running on port ${PORT}`);
+  startReportScheduler();
 });
 
 // Handle unhandled promise rejections
@@ -19,6 +24,7 @@ process.on('uncaughtException', (err) => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, closing server...');
+  stopReportScheduler();
   server.close(() => {
     console.log('Server closed');
     process.exit(0);
@@ -27,6 +33,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   console.log('SIGINT received, closing server...');
+  stopReportScheduler();
   server.close(() => {
     console.log('Server closed');
     process.exit(0);

@@ -248,6 +248,8 @@ describe('Auth Controller', () => {
           role: 'OWNER',
           reportFrequency: null,
           reportFormat: null,
+          reportScheduleTime: null,
+          reportScheduleWeekday: null,
           receiveScheduledReports: null,
         },
       ]);
@@ -265,6 +267,8 @@ describe('Auth Controller', () => {
           role: 'OWNER',
           reportFrequency: 'none',
           reportFormat: 'pdf',
+          reportScheduleTime: '09:00',
+          reportScheduleWeekday: 'monday',
           receiveScheduledReports: false,
         },
       ]);

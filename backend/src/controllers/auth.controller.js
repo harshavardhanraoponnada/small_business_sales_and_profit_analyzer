@@ -329,6 +329,8 @@ exports.getUsers = async (req, res) => {
         role: true,
         reportFrequency: true,
         reportFormat: true,
+        reportScheduleTime: true,
+        reportScheduleWeekday: true,
         receiveScheduledReports: true
       }
     });
@@ -341,6 +343,8 @@ exports.getUsers = async (req, res) => {
       role: user.role,
       reportFrequency: user.reportFrequency || "none",
       reportFormat: user.reportFormat || "pdf",
+      reportScheduleTime: user.reportScheduleTime || "09:00",
+      reportScheduleWeekday: user.reportScheduleWeekday || "monday",
       receiveScheduledReports: user.receiveScheduledReports || false
     }));
 
