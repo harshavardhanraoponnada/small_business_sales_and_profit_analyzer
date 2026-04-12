@@ -110,7 +110,7 @@ export interface DataTableProps<T> {
   data: T[];
   loading?: boolean;
   error?: string;
-  onSort?: (key: string, order: 'asc' | 'desc') => void;
+  onSort?: (key: string, order: 'asc' | 'desc' | 'none') => void;
   onRowClick?: (row: T) => void;
   selectable?: boolean;
   onSelectionChange?: (selected: T[]) => void;

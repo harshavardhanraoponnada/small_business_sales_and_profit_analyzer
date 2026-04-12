@@ -7,6 +7,8 @@ import {
   SelectValue,
 } from '@/components/shadcn/select';
 
+const EMPTY_OPTION_SENTINEL = '__EMPTY_OPTION__';
+
 /**
  * Select wrapper with typed options and inline validation message support.
  */
@@ -21,6 +23,16 @@ export function AppSelect({
   disabled,
   className,
 }: AppSelectProps) {
+  const toSelectValue = (value: string | number | undefined) => {
+    if (value == null) return undefined;
+    const normalized = String(value);
+    return normalized === '' ? EMPTY_OPTION_SENTINEL : normalized;
+  };
+
+  const fromSelectValue = (value: string) => {
+    return value === EMPTY_OPTION_SENTINEL ? '' : value;
+  };
+
   return (
     <div className="space-y-1.5">
       {label ? (
@@ -31,8 +43,8 @@ export function AppSelect({
       ) : null}
 
       <Select
-        value={value == null ? undefined : String(value)}
-        onValueChange={(selected) => onChange?.(selected)}
+        value={toSelectValue(value)}
+        onValueChange={(selected) => onChange?.(fromSelectValue(selected))}
         disabled={disabled}
       >
         <SelectTrigger className={className} aria-invalid={Boolean(error)}>
@@ -40,7 +52,7 @@ export function AppSelect({
         </SelectTrigger>
         <SelectContent>
           {options.map((option) => (
-            <SelectItem key={String(option.value)} value={String(option.value)}>
+            <SelectItem key={String(option.value)} value={toSelectValue(option.value)}>
               {option.label}
             </SelectItem>
           ))}

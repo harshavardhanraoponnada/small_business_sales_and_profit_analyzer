@@ -1,6 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPost, apiPut, apiDelete, endpoints } from '@/services/api';
-import { Expense, ApiResponse, ApiListResponse } from '@/types';
+import { Expense, ApiListResponse } from '@/types';
+
+export interface ExpenseCategoryOption {
+  id?: string | null;
+  key: string;
+  name: string;
+  expense_group: string;
+  affects_cogs_default: boolean;
+  is_system?: boolean;
+  is_active?: boolean;
+  display_order?: number;
+}
+
+export interface ExpenseMetadata {
+  paymentMethods: string[];
+}
 
 /**
  * Query key factory for expenses
@@ -11,6 +26,38 @@ const expenseKeys = {
   list: (filters: any) => [...expenseKeys.lists(), { filters }] as const,
   details: () => [...expenseKeys.all, 'detail'] as const,
   detail: (id: string | number) => [...expenseKeys.details(), id] as const,
+  categories: () => [...expenseKeys.all, 'categories'] as const,
+  metadata: () => [...expenseKeys.all, 'metadata'] as const,
+};
+
+export const useExpenseCategories = () => {
+  return useQuery({
+    queryKey: expenseKeys.categories(),
+    queryFn: async () => {
+      const response = await apiGet<ApiListResponse<ExpenseCategoryOption>>(endpoints.expenses.categories);
+      const payload: any = response;
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload?.data)) return payload.data;
+      return [];
+    },
+  });
+};
+
+export const useExpenseMetadata = () => {
+  return useQuery({
+    queryKey: expenseKeys.metadata(),
+    queryFn: async () => {
+      const response = await apiGet<ExpenseMetadata>(endpoints.expenses.metadata);
+      const payload: any = response;
+      if (payload?.paymentMethods) {
+        return payload as ExpenseMetadata;
+      }
+      if (payload?.data?.paymentMethods) {
+        return payload.data as ExpenseMetadata;
+      }
+      return { paymentMethods: [] } as ExpenseMetadata;
+    },
+  });
 };
 
 /**
@@ -21,7 +68,10 @@ export const useExpenses = (filters?: any) => {
     queryKey: expenseKeys.list(filters),
     queryFn: async () => {
       const response = await apiGet<ApiListResponse<Expense>>(endpoints.expenses.list);
-      return response.data || [];
+      const payload: any = response;
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload?.data)) return payload.data;
+      return [];
     },
   });
 };
@@ -34,7 +84,8 @@ export const useExpense = (id: string | number) => {
     queryKey: expenseKeys.detail(id),
     queryFn: async () => {
       const response = await apiGet<Expense>(endpoints.expenses.get(id));
-      return response.data;
+      const payload: any = response;
+      return payload?.data ?? payload?.expense ?? payload;
     },
     enabled: !!id,
   });
@@ -48,8 +99,13 @@ export const useCreateExpense = () => {
 
   return useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiPost<Expense>(endpoints.expenses.create, data);
-      return response.data;
+      const response = await apiPost<Expense>(
+        endpoints.expenses.create,
+        data,
+        data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
+      );
+      const payload: any = response;
+      return payload?.data ?? payload?.expense ?? payload;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: expenseKeys.lists() });
@@ -65,8 +121,13 @@ export const useUpdateExpense = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
-      const response = await apiPut<Expense>(endpoints.expenses.update(id), data);
-      return response.data;
+      const response = await apiPut<Expense>(
+        endpoints.expenses.update(id),
+        data,
+        data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
+      );
+      const payload: any = response;
+      return payload?.data ?? payload?.expense ?? payload;
     },
     onSuccess: (data) => {
       if (data) {

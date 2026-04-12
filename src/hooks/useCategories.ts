@@ -21,7 +21,10 @@ export const useCategories = (filters?: any) => {
     queryKey: categoryKeys.list(filters),
     queryFn: async () => {
       const response = await apiGet<ApiListResponse<Category>>(endpoints.categories.list);
-      return response.data || [];
+      const payload: any = response;
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload?.data)) return payload.data;
+      return [];
     },
   });
 };
@@ -34,7 +37,8 @@ export const useCategory = (id: string | number) => {
     queryKey: categoryKeys.detail(id),
     queryFn: async () => {
       const response = await apiGet<Category>(endpoints.categories.get(id));
-      return response.data;
+      const payload: any = response;
+      return payload?.data ?? payload;
     },
     enabled: !!id,
   });
@@ -49,7 +53,8 @@ export const useCreateCategory = () => {
   return useMutation({
     mutationFn: async (data: any) => {
       const response = await apiPost<Category>(endpoints.categories.create, data);
-      return response.data;
+      const payload: any = response;
+      return payload?.data ?? payload;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryKeys.lists() });
@@ -66,7 +71,8 @@ export const useUpdateCategory = () => {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
       const response = await apiPut<Category>(endpoints.categories.update(id), data);
-      return response.data;
+      const payload: any = response;
+      return payload?.data ?? payload;
     },
     onSuccess: (data) => {
       if (data) {

@@ -21,7 +21,11 @@ export const useProducts = (filters?: any) => {
     queryKey: productKeys.list(filters),
     queryFn: async () => {
       const response = await apiGet<ApiListResponse<Product>>(endpoints.products.list);
-      return response.data || [];
+      const payload: any = response;
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload?.data)) return payload.data;
+      if (Array.isArray(payload?.products)) return payload.products;
+      return [];
     },
   });
 };
@@ -34,7 +38,8 @@ export const useProduct = (id: string | number) => {
     queryKey: productKeys.detail(id),
     queryFn: async () => {
       const response = await apiGet<Product>(endpoints.products.get(id));
-      return response.data;
+      const payload: any = response;
+      return payload?.data ?? payload?.product ?? payload;
     },
     enabled: !!id,
   });
@@ -49,7 +54,8 @@ export const useCreateProduct = () => {
   return useMutation({
     mutationFn: async (data: any) => {
       const response = await apiPost<Product>(endpoints.products.create, data);
-      return response.data;
+      const payload: any = response;
+      return payload?.data ?? payload?.product ?? payload;
     },
     onSuccess: () => {
       // Invalidate products list to refetch
@@ -67,7 +73,8 @@ export const useUpdateProduct = () => {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
       const response = await apiPut<Product>(endpoints.products.update(id), data);
-      return response.data;
+      const payload: any = response;
+      return payload?.data ?? payload?.product ?? payload;
     },
     onSuccess: (data) => {
       // Update specific product and invalidate list

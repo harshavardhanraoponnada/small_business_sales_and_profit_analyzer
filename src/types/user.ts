@@ -3,21 +3,29 @@
  */
 
 export enum Role {
-  ADMIN = 'ADMIN',
-  MANAGER = 'MANAGER',
-  USER = 'USER',
-  VIEWER = 'VIEWER',
+  OWNER = 'OWNER',
+  ACCOUNTANT = 'ACCOUNTANT',
+  STAFF = 'STAFF',
 }
+
+export type UserStatus = 'ACTIVE' | 'INACTIVE';
 
 export interface User {
   id: string | number;
   email: string;
-  name: string;
+  name?: string;
+  username?: string;
   role: Role;
+  status?: UserStatus;
   createdAt?: string;
   updatedAt?: string;
   lastLogin?: string;
   isActive?: boolean;
+  reportFrequency?: string;
+  reportFormat?: string;
+  reportScheduleTime?: string;
+  reportScheduleWeekday?: string;
+  receiveScheduledReports?: boolean;
 }
 
 export interface AuthState {
@@ -29,7 +37,7 @@ export interface AuthState {
 }
 
 export interface LoginPayload {
-  email: string;
+  username: string;
   password: string;
 }
 

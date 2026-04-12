@@ -15,7 +15,11 @@ export const useBrands = (filters?: unknown) => {
     queryKey: brandKeys.list(filters),
     queryFn: async () => {
       const response = await apiGet<ApiListResponse<Brand>>(endpoints.brands.list);
-      return response.data || [];
+      const payload: any = response;
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload?.data)) return payload.data;
+      if (Array.isArray(payload?.brands)) return payload.brands;
+      return [];
     },
   });
 };
@@ -25,7 +29,8 @@ export const useBrand = (id: string | number) => {
     queryKey: brandKeys.detail(id),
     queryFn: async () => {
       const response = await apiGet<Brand>(endpoints.brands.get(id));
-      return response.data;
+      const payload: any = response;
+      return payload?.data ?? payload?.brand ?? payload;
     },
     enabled: !!id,
   });
@@ -37,7 +42,8 @@ export const useCreateBrand = () => {
   return useMutation({
     mutationFn: async (data: Partial<Brand>) => {
       const response = await apiPost<Brand>(endpoints.brands.create, data);
-      return response.data;
+      const payload: any = response;
+      return payload?.data ?? payload?.brand ?? payload;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: brandKeys.lists() });
@@ -51,7 +57,8 @@ export const useUpdateBrand = () => {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string | number; data: Partial<Brand> }) => {
       const response = await apiPut<Brand>(endpoints.brands.update(id), data);
-      return response.data;
+      const payload: any = response;
+      return payload?.data ?? payload?.brand ?? payload;
     },
     onSuccess: (data) => {
       if (data) {

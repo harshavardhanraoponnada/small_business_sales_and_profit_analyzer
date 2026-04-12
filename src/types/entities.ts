@@ -39,13 +39,21 @@ export interface Sale {
 export interface Expense {
   id: string | number;
   date: string;
-  categoryId: string | number;
+  categoryId?: string | number;
+  category?: string;
+  expense_category_id?: string | null;
   amount: number;
   description: string;
+  vendor_name?: string;
+  invoice_reference?: string;
+  tax_amount?: number;
+  payment_method?: string;
+  affects_cogs_override?: boolean;
   uploadPath?: string;
+  receipt_file?: string;
   createdAt?: string;
   updatedAt?: string;
-  category?: Category;
+  expenseCategory?: Category;
 }
 
 export interface Category {
@@ -79,14 +87,22 @@ export interface Variant {
 
 export interface AuditLog {
   id: string | number;
-  userId: string | number;
   action: string;
-  entityType: string;
-  entityId: string | number;
-  changes?: Record<string, any>;
-  ipAddress?: string;
   timestamp: string;
-  user?: { name: string; email: string };
+  username?: string;
+  role?: string;
+  details?: string;
+  ipAddress?: string;
+  userId?: string | number;
+  entityType?: string;
+  entityId?: string | number;
+  changes?: Record<string, any>;
+  user?: {
+    name?: string;
+    email?: string;
+    username?: string;
+    role?: string;
+  };
 }
 
 export interface InventoryItem {

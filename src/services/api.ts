@@ -6,6 +6,38 @@ import { ApiResponse, ApiError } from '@/types';
  */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
+let isRedirectingToLogin = false;
+
+const clearAuthSession = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+};
+
+const redirectToLogin = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (window.location.pathname === '/login' || isRedirectingToLogin) {
+    return;
+  }
+
+  isRedirectingToLogin = true;
+  window.location.assign('/login');
+};
+
+const isAuthFailure = (error: AxiosError<ApiResponse>): boolean => {
+  const status = error?.response?.status;
+  const message = String(error?.response?.data?.message || '').toLowerCase();
+
+  if (status === 401) {
+    return true;
+  }
+
+  // Backend uses 403 for expired JWT in auth middleware.
+  return status === 403 && message.includes('invalid or expired token');
+};
+
 /**
  * Create Axios instance with default configuration
  */
@@ -24,7 +56,7 @@ const createApiClient = (): AxiosInstance => {
   client.interceptors.request.use(
     (config) => {
       const token = localStorage.getItem('token');
-      if (token) {
+      if (token && token !== 'undefined' && token !== 'null') {
         config.headers.Authorization = `Bearer ${token}`;
       }
       return config;
@@ -40,14 +72,10 @@ const createApiClient = (): AxiosInstance => {
   client.interceptors.response.use(
     (response) => response,
     (error: AxiosError<ApiResponse>) => {
-      // Handle 401 Unauthorized
-      if (error?.response?.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-
-        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-          window.location.assign('/login');
-        }
+      if (isAuthFailure(error)) {
+        clearAuthSession();
+        redirectToLogin();
+        return Promise.reject(error);
       }
 
       // Handle 403 Forbidden
@@ -156,7 +184,11 @@ export const apiPatch = async <T = any, D = any>(
 const handleApiError = (error: any): ApiError => {
   if (axios.isAxiosError(error)) {
     return {
-      message: error.response?.data?.message || error.message || 'An error occurred',
+      message:
+        error.response?.data?.message ||
+        (error.response?.data as any)?.error ||
+        error.message ||
+        'An error occurred',
       status: error.response?.status || 500,
       code: error.code,
       details: error.response?.data,
@@ -207,6 +239,8 @@ export const endpoints = {
     update: (id: string | number) => `/expenses/${id}`,
     delete: (id: string | number) => `/expenses/${id}`,
     upload: '/expenses/upload',
+    categories: '/expenses/categories',
+    metadata: '/expenses/metadata',
   },
 
   // Categories
@@ -238,17 +272,24 @@ export const endpoints = {
 
   // Users
   users: {
-    list: '/users',
-    get: (id: string | number) => `/users/${id}`,
-    create: '/users',
-    update: (id: string | number) => `/users/${id}`,
-    delete: (id: string | number) => `/users/${id}`,
+    list: '/auth/users',
+    get: (id: string | number) => `/auth/users/${id}`,
+    create: '/auth/add-user',
+    update: (id: string | number) => `/auth/update-user/${id}`,
+    delete: (id: string | number) => `/auth/delete-user/${id}`,
+  },
+
+  // User Preferences
+  userPreferences: {
+    current: '/users/preferences/reports',
+    get: (id: string | number) => `/users/${id}/preferences/reports`,
+    update: (id: string | number) => `/users/${id}/preferences/reports`,
   },
 
   // Audit Logs
   auditLogs: {
-    list: '/audit-logs',
-    get: (id: string | number) => `/audit-logs/${id}`,
+    list: '/audit',
+    get: (id: string | number) => `/audit/${id}`,
   },
 
   // ML/Predictions

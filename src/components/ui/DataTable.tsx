@@ -18,22 +18,40 @@ export function DataTable<T extends Record<string, any>>({
   pagination,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'none'>('none');
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
+  const compareValues = (aValue: unknown, bValue: unknown) => {
+    if (aValue == null && bValue == null) return 0;
+    if (aValue == null) return 1;
+    if (bValue == null) return -1;
+
+    const aNumber = Number(aValue);
+    const bNumber = Number(bValue);
+    if (Number.isFinite(aNumber) && Number.isFinite(bNumber)) {
+      if (aNumber === bNumber) return 0;
+      return aNumber > bNumber ? 1 : -1;
+    }
+
+    const aDate = new Date(String(aValue)).getTime();
+    const bDate = new Date(String(bValue)).getTime();
+    if (Number.isFinite(aDate) && Number.isFinite(bDate)) {
+      if (aDate === bDate) return 0;
+      return aDate > bDate ? 1 : -1;
+    }
+
+    return String(aValue).localeCompare(String(bValue), undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    });
+  };
+
   const sortedRows = useMemo(() => {
-    if (!sortKey) return data;
+    if (!sortKey || sortOrder === 'none') return data;
 
     return [...data].sort((a, b) => {
-      const aValue = a[sortKey];
-      const bValue = b[sortKey];
-
-      if (aValue == null) return 1;
-      if (bValue == null) return -1;
-      if (aValue === bValue) return 0;
-
-      const result = aValue > bValue ? 1 : -1;
+      const result = compareValues(a[sortKey], b[sortKey]);
       return sortOrder === 'asc' ? result : -result;
     });
   }, [data, sortKey, sortOrder]);
@@ -41,10 +59,29 @@ export function DataTable<T extends Record<string, any>>({
   const handleSort = (key: string, sortable?: boolean) => {
     if (!sortable) return;
 
-    const nextOrder = sortKey === key && sortOrder === 'asc' ? 'desc' : 'asc';
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortOrder('asc');
+      onSort?.(key, 'asc');
+      return;
+    }
+
+    if (sortOrder === 'asc') {
+      setSortOrder('desc');
+      onSort?.(key, 'desc');
+      return;
+    }
+
+    if (sortOrder === 'desc') {
+      setSortKey(null);
+      setSortOrder('none');
+      onSort?.(key, 'none');
+      return;
+    }
+
     setSortKey(key);
-    setSortOrder(nextOrder);
-    onSort?.(key, nextOrder);
+    setSortOrder('asc');
+    onSort?.(key, 'asc');
   };
 
   const toggleRowSelection = (index: number, row: T) => {

@@ -21,7 +21,10 @@ export const useSales = (filters?: any) => {
     queryKey: saleKeys.list(filters),
     queryFn: async () => {
       const response = await apiGet<ApiListResponse<Sale>>(endpoints.sales.list);
-      return response.data || [];
+      const payload: any = response;
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload?.data)) return payload.data;
+      return [];
     },
   });
 };
@@ -34,7 +37,8 @@ export const useSale = (id: string | number) => {
     queryKey: saleKeys.detail(id),
     queryFn: async () => {
       const response = await apiGet<Sale>(endpoints.sales.get(id));
-      return response.data;
+      const payload: any = response;
+      return payload?.data ?? payload?.sale ?? payload;
     },
     enabled: !!id,
   });
@@ -49,7 +53,8 @@ export const useCreateSale = () => {
   return useMutation({
     mutationFn: async (data: any) => {
       const response = await apiPost<Sale>(endpoints.sales.create, data);
-      return response.data;
+      const payload: any = response;
+      return payload?.data ?? payload?.sale ?? payload;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: saleKeys.lists() });
@@ -66,7 +71,8 @@ export const useUpdateSale = () => {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
       const response = await apiPut<Sale>(endpoints.sales.update(id), data);
-      return response.data;
+      const payload: any = response;
+      return payload?.data ?? payload?.sale ?? payload;
     },
     onSuccess: (data) => {
       if (data) {

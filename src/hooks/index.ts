@@ -5,12 +5,40 @@
 export { useTheme } from './useTheme';
 export { useProducts, useProduct, useCreateProduct, useUpdateProduct, useDeleteProduct } from './useProducts';
 export { useSales, useSale, useCreateSale, useUpdateSale, useDeleteSale } from './useSales';
-export { useExpenses, useExpense, useCreateExpense, useUpdateExpense, useDeleteExpense } from './useExpenses';
+export {
+	useExpenses,
+	useExpense,
+	useCreateExpense,
+	useUpdateExpense,
+	useDeleteExpense,
+	useExpenseCategories,
+	useExpenseMetadata,
+} from './useExpenses';
 export { useCategories, useCategory, useCreateCategory, useUpdateCategory, useDeleteCategory } from './useCategories';
 export { useBrands, useBrand, useCreateBrand, useUpdateBrand, useDeleteBrand } from './useBrands';
 export { useVariants, useVariant, useCreateVariant, useUpdateVariant, useDeleteVariant } from './useVariants';
-export { useUsers, useUser, useCreateUser, useUpdateUser, useDeleteUser } from './useUsers';
+export {
+	useUsers,
+	useUser,
+	useCreateUser,
+	useUpdateUser,
+	useDeleteUser,
+	useUpdateUserReportPreferences,
+} from './useUsers';
 export { useAuditLogs, useAuditLog } from './useAuditLogs';
 export { useForm } from './useForm';
 export { useFormErrors } from './useFormErrors';
+export {
+	useDashboardSummary,
+	useDashboardQuickStats,
+	useLowStockAlerts,
+	useSalesTrend,
+	useProfitTrend,
+	useExpenseAnalytics,
+} from './useDashboard';
+export {
+	useMLPredictionsSummary,
+	useMLModelMetrics,
+	useTrainMLModels,
+} from './useMLAnalytics';
 

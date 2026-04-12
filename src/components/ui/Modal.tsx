@@ -25,14 +25,14 @@ export function Modal({
 }: ModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => (open ? undefined : onClose())}>
-      <DialogContent className={sizeMap[size]}>
+      <DialogContent className={`${sizeMap[size]} max-h-[90dvh] overflow-y-auto overscroll-contain`}>
         {title ? (
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription className="sr-only">{title}</DialogDescription>
           </DialogHeader>
         ) : null}
-        <div>{children}</div>
+        <div className="min-h-0">{children}</div>
         {footer ? <DialogFooter>{footer}</DialogFooter> : null}
       </DialogContent>
     </Dialog>

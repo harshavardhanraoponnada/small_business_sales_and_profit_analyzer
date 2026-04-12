@@ -1,4 +1,4 @@
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, FocusEvent } from 'react';
 import type { InputProps as AppInputProps } from '@/types';
 import { Input } from '@/components/shadcn/input';
 
@@ -20,6 +20,15 @@ export function AppInput({
 }: AppInputProps) {
   const helperText = error || hint;
 
+  const handleFocus = (event: FocusEvent<HTMLInputElement>) => {
+    if (type !== 'number') return;
+
+    const normalized = String(value ?? '').trim();
+    if (normalized === '0' || normalized === '0.0' || normalized === '0.00') {
+      event.target.select();
+    }
+  };
+
   return (
     <div className="space-y-1.5">
       {label ? (
@@ -34,6 +43,7 @@ export function AppInput({
         placeholder={placeholder}
         value={value}
         onChange={(event: ChangeEvent<HTMLInputElement>) => onChange?.(event.target.value)}
+        onFocus={handleFocus}
         onBlur={onBlur}
         disabled={disabled}
         aria-invalid={Boolean(error)}
