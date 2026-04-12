@@ -31,11 +31,11 @@ describe('Type System Verification', () => {
       id: 1,
       email: 'test@example.com',
       name: 'Test User',
-      role: Role.USER,
+      role: Role.STAFF,
       createdAt: new Date().toISOString(),
     };
     expect(user.email).toBe('test@example.com');
-    expect(user.role).toBe('USER');
+    expect(user.role).toBe('STAFF');
   });
 
   test('Product types should be properly defined', () => {
@@ -94,9 +94,8 @@ describe('Type System Verification', () => {
   });
 
   test('Role enum should have all values', () => {
-    expect(Role.ADMIN).toBe('ADMIN');
-    expect(Role.MANAGER).toBe('MANAGER');
-    expect(Role.USER).toBe('USER');
-    expect(Role.VIEWER).toBe('VIEWER');
+    expect(Role.OWNER).toBe('OWNER');
+    expect(Role.ACCOUNTANT).toBe('ACCOUNTANT');
+    expect(Role.STAFF).toBe('STAFF');
   });
 });
