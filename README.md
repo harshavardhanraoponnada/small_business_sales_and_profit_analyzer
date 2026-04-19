@@ -1,425 +1,387 @@
-# Infosys Inventory & Sales Management System
+# PhoneVerse Frontend
 
-Production-focused monorepo for inventory, sales, expense accounting, reporting, audit tracking, and ML-assisted forecasting.
+Production frontend for PhoneVerse business operations. This client powers inventory, products, sales, expenses, audit visibility, user administration, and ML analytics views.
+
+This README is the final implementation guide for development, testing, and deployment of the frontend app.
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Architecture](#architecture)
-3. [Project Structure](#project-structure)
-4. [Current Delivery Status](#current-delivery-status)
-5. [Tech Stack](#tech-stack)
-6. [Quick Start (Local Development)](#quick-start-local-development)
-7. [Environment Configuration](#environment-configuration)
-8. [Scripts and Commands](#scripts-and-commands)
-9. [API Surface](#api-surface)
-10. [Roles and Access Model](#roles-and-access-model)
-11. [Data Model Summary](#data-model-summary)
-12. [Testing and Quality Gates](#testing-and-quality-gates)
-13. [Deployment Notes](#deployment-notes)
-14. [Troubleshooting](#troubleshooting)
-15. [Documentation Index](#documentation-index)
-16. [Contributing](#contributing)
-17. [License](#license)
+2. [Core Capabilities](#core-capabilities)
+3. [Tech Stack](#tech-stack)
+4. [Architecture](#architecture)
+5. [Route and Access Matrix](#route-and-access-matrix)
+6. [Project Structure](#project-structure)
+7. [Getting Started](#getting-started)
+8. [Environment Configuration](#environment-configuration)
+9. [Available Scripts](#available-scripts)
+10. [Data and API Layer](#data-and-api-layer)
+11. [UI System and Styling](#ui-system-and-styling)
+12. [Forms and Validation](#forms-and-validation)
+13. [Testing and Quality Gates](#testing-and-quality-gates)
+14. [Performance and Build Notes](#performance-and-build-notes)
+15. [Documentation Map](#documentation-map)
+16. [Troubleshooting](#troubleshooting)
+17. [Deployment](#deployment)
+18. [Contribution Workflow](#contribution-workflow)
 
 ## Overview
 
-This repository contains three main services:
+The frontend is a React + Vite application with:
 
-- Frontend web application (`frontend/`) for UI and user workflows
-- Backend API (`backend/`) for auth, business logic, reporting, and persistence
-- ML microservice (`ml-service/`) for forecasting and predictive analytics
+- Provider-based app bootstrap (`ThemeProvider`, `AuthProvider`, `QueryClientProvider`)
+- Route-level lazy loading with protected role-aware routes
+- Typed API layer using Axios + interceptors
+- React Query for server state and caching
+- Tailwind v4 + CSS Modules + shadcn-style primitives for consistent UI
+- Jest + Testing Library for unit/integration tests
 
-The system is designed for role-based business operations with auditability and operational reporting.
+## Core Capabilities
+
+- Dashboard KPIs, charts, and summary data
+- Product and inventory management
+- Sales workflows with table operations
+- Expense management with categorization
+- Audit log exploration (owner access)
+- User management and report preference controls (owner access)
+- ML forecast dashboard and model metrics
+- Dark mode via class-based theme strategy
+
+## Tech Stack
+
+### Runtime
+
+- React 19
+- React DOM 19
+- React Router DOM 7
+- Axios
+- Recharts
+- React Hook Form
+- Zod
+- @tanstack/react-query
+- Tailwind CSS v4 (`@tailwindcss/vite`)
+- Radix UI primitives and shadcn-style component wrappers
+
+### Tooling
+
+- Vite 7
+- TypeScript 5 (`allowJs: true`, `strict: true`)
+- ESLint 9
+- Jest + ts-jest + Testing Library
 
 ## Architecture
 
-```text
-Frontend (React + Vite)  --->  Backend API (Express + Prisma)  --->  PostgreSQL
-                                         |                        --->  Redis
-                                         |
-                                         +----------------------->  ML Service (Flask)
-```
+### App Bootstrap
 
-### Default Local Ports
+1. `src/main.jsx`
+2. `QueryClientProvider` wraps app with shared query cache
+3. `src/app/App.jsx` applies providers:
+	 - `ThemeProvider`
+	 - `AuthProvider`
+	 - `Router`
 
-| Service | Default Port | Notes |
-|---|---:|---|
-| Frontend (Vite dev) | 5173 | Can change if occupied |
-| Backend API | 5000 | Main REST API |
-| ML service | 5001 | Flask forecasting service |
-| PostgreSQL | 5432 | Docker container |
-| Redis | 6379 | Docker container |
-| Nginx (compose) | 80 / 443 | Reverse proxy and LB |
+### Routing
+
+- Route definitions: `src/app/router.jsx`
+- Route guard: `src/app/ProtectedRoute.jsx`
+- Layout shell: `src/components/layout/AppLayout`
+- Suspense fallback uses shared `LoadingState`
+
+### State Boundaries
+
+- App state: auth + theme context
+- Server state: React Query hooks (`src/hooks/use*.ts`)
+- Local state: page-level UI interactions (modals, filters, sorting, pagination)
+
+## Route and Access Matrix
+
+| Route | Access | Notes |
+|---|---|---|
+| `/login` | Public | Auth entry screen |
+| `/` | Authenticated | Dashboard |
+| `/sales` | Authenticated | Sales operations |
+| `/products` | OWNER, ACCOUNTANT | Product management |
+| `/inventory` | OWNER, ACCOUNTANT | Stock view and adjustments |
+| `/expenses` | OWNER, ACCOUNTANT | Expense operations |
+| `/audit` | OWNER | Read-only audit logs |
+| `/users` | OWNER | User administration |
+| `/ml-analytics` | OWNER | ML forecast and model metrics |
 
 ## Project Structure
 
 ```text
-app/
-  backend/
-    prisma/
-      schema.prisma
-      migrations/
-    src/
-      app.js
-      server.js
-      controllers/
-      middleware/
-      routes/
-      services/
-      uploads/
-      data/
-  frontend/
-    docs/
-      DESIGN_SYSTEM.md
-      REFACTORING_GUIDE.md
-    src/
-      app/
-      auth/
-      components/
-      hooks/
-      lib/
-      pages/
-      services/
-      types/
-      css/
-      __tests__/
-    README.md
-  ml-service/
-    app.py
-    routes/
-    services/
-    config/
-    trained_models/
-    README.md
-  docker-compose.yml
-  nginx.conf
-  README.md
+frontend/
+	docs/
+		DESIGN_SYSTEM.md
+		REFACTORING_GUIDE.md
+	src/
+		app/
+			App.jsx
+			ProtectedRoute.jsx
+			ThemeContext.tsx
+			router.jsx
+		auth/
+			authContext.jsx
+			ModernLogin.jsx
+		components/
+			layout/
+			ui/
+			shadcn/
+			sales/
+			products/
+			expenses/
+			dashboard/
+			users/
+			reports/
+			audit/
+			inventory/
+		hooks/
+			useProducts.ts
+			useSales.ts
+			useExpenses.ts
+			useUsers.ts
+			useAuditLogs.ts
+			...
+		lib/
+			queryClient.ts
+			formSchemas.ts
+		pages/
+			Dashboard.tsx
+			Sales.tsx
+			Products.tsx
+			Expenses.tsx
+			Inventory.tsx
+			Audit.tsx
+			Users.tsx
+			MLAnalytics.jsx
+		services/
+			api.ts
+		types/
+			api.ts
+			entities.ts
+			ui.ts
+			user.ts
+		__tests__/
+	package.json
+	vite.config.js
+	tsconfig.json
+	jest.config.cjs
 ```
 
-## Current Delivery Status
+## Getting Started
 
-### Completed
+### Prerequisites
 
-- Security baseline: CORS, security headers, JWT auth, role middleware
-- Audit logging persisted to PostgreSQL
-- Prisma migration from CSV-first flows to PostgreSQL-backed models
-- Core CRUD endpoints for catalog, sales, expenses, reports, users
-- Frontend component library and major page refactors (TypeScript + React Query)
-- Docker compose foundation for multi-instance backend + Nginx reverse proxy
+- Node.js 20+ recommended
+- npm 10+
+- Backend API running (default expected at `http://localhost:5000`)
 
-### In Progress / Remaining
-
-- Full migration of remaining legacy frontend JSX areas (notably ML analytics path/components)
-- Session/cache strategy hardening for distributed runtime
-- End-to-end deployment verification for load-balanced production profile
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | React 19, Vite 7, TypeScript 5, Tailwind CSS 4, React Query 5, React Hook Form, Zod, Recharts |
-| Backend | Node.js, Express 5, Prisma 5, Joi, JWT, Pino |
-| Data | PostgreSQL 15, Redis 7 |
-| ML | Flask, Prophet, scikit-learn |
-| Infra | Docker Compose, Nginx |
-
-## Quick Start (Local Development)
-
-### 1. Install Dependencies
+### Install and Run
 
 ```bash
-# Root (optional convenience scripts)
-npm install
-
-# Backend
-cd backend
-npm install
-
-# Frontend
-cd ../frontend
-npm install
-
-# ML service
-cd ../ml-service
-pip install -r requirements.txt
-```
-
-### 2. Configure Environment
-
-Copy from examples:
-
-- `backend/.env.example` -> `backend/.env`
-- `frontend/.env.example` -> `frontend/.env`
-- `ml-service/.env.example` -> `ml-service/.env`
-
-### 3. Start Database and Cache
-
-```bash
-docker compose up -d postgres redis
-```
-
-### 4. Run Backend Migrations
-
-```bash
-cd backend
-npx prisma migrate deploy
-```
-
-### 5. Run Services (separate terminals)
-
-```bash
-# Terminal A
-cd backend
-npm run dev
-
-# Terminal B
 cd frontend
+npm install
 npm run dev
+```
 
-# Terminal C
-cd ml-service
-python app.py
+Vite default is `http://localhost:5173` (port may shift if occupied).
+
+### Start Backend (separate terminal)
+
+```bash
+cd backend
+npm install
+npm run dev
 ```
 
 ## Environment Configuration
 
-### Backend (`backend/.env`)
-
-Required minimum:
-
-```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/infosys_app?schema=public
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=replace_with_strong_random_secret
-CORS_ORIGINS=http://localhost:5173,http://localhost:5174
-PORT=5000
-ML_SERVICE_URL=http://localhost:5001
-```
-
-### Frontend (`frontend/.env`)
+Create `frontend/.env`:
 
 ```env
 VITE_API_BASE_URL=http://localhost:5000/api
-VITE_UPLOAD_BASE_URL=http://localhost:5000
 ```
 
-### ML Service (`ml-service/.env`)
+If omitted, frontend falls back to `http://localhost:5000/api` from `src/services/api.ts`.
 
-```env
-FLASK_PORT=5001
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/infosys_app
+## Available Scripts
+
+| Script | Command | Purpose |
+|---|---|---|
+| Dev server | `npm run dev` | Start Vite dev server |
+| Build | `npm run build` | Produce production bundle |
+| Preview | `npm run preview` | Serve built output locally |
+| Lint | `npm run lint` | Run ESLint across project |
+| Test | `npm run test` | Run Jest once (watch disabled) |
+| Test watch | `npm run test:watch` | Run Jest in watch mode |
+| Coverage | `npm run test:coverage` | Generate coverage report |
+
+Type-check command (no script wrapper):
+
+```bash
+npx tsc --noEmit
 ```
 
-## Scripts and Commands
+## Data and API Layer
 
-### Root Scripts
+Primary API client: `src/services/api.ts`
 
-| Script | Command |
-|---|---|
-| Run all tests | `npm test` |
-| Frontend tests | `npm run test:frontend` |
-| Backend tests | `npm run test:backend` |
-| Frontend coverage | `npm run test:coverage:frontend` |
-| Backend coverage | `npm run test:coverage:backend` |
-| Backend tests in Docker profile | `npm run test:backend:docker` |
+### Features
 
-### Backend Scripts (`backend/package.json`)
+- Typed wrappers (`apiGet`, `apiPost`, `apiPut`, `apiPatch`, `apiDelete`)
+- JWT request interceptor (`Authorization: Bearer <token>`)
+- Auth failure handling:
+	- clears session
+	- redirects to `/login`
+- Organized endpoint registry (`endpoints.*`)
 
-| Script | Command |
-|---|---|
-| Dev server | `npm run dev` |
-| Production start | `npm start` |
-| Unit/integration tests | `npm test` |
-| Coverage | `npm run test:coverage` |
-| Integration only | `npm run test:integration` |
+### React Query Defaults
 
-### Frontend Scripts (`frontend/package.json`)
+Configured in `src/lib/queryClient.ts`:
 
-| Script | Command |
-|---|---|
-| Dev server | `npm run dev` |
-| Build | `npm run build` |
-| Preview | `npm run preview` |
-| Lint | `npm run lint` |
-| Tests | `npm test` |
-| Coverage | `npm run test:coverage` |
+- `staleTime`: 5 minutes
+- `gcTime`: 10 minutes
+- `retry`: 1
+- `refetchOnWindowFocus`: false
 
-## API Surface
+## UI System and Styling
 
-All backend routes are mounted under `/api` in `backend/src/app.js`.
+### Styling Layers
 
-### Authentication and User Admin
+1. Tailwind CSS v4 utility classes
+2. CSS Modules for scoped page/component styles
+3. shadcn-style primitives under `src/components/shadcn`
+4. Shared global tokens/variables in `src/index.css`
 
-- `/api/auth/login`
-- `/api/auth/forgot-password`
-- `/api/auth/reset-password`
-- `/api/auth/add-user` (owner)
-- `/api/auth/update-user/:id` (owner)
-- `/api/auth/delete-user/:id` (owner)
-- `/api/auth/users` (owner)
+### Dark Mode
 
-### Business Entities
+- Class-based dark mode (`dark` class on `<html>`)
+- Managed by `ThemeProvider` in `src/app/ThemeContext.tsx`
+- User preference persisted in `localStorage`
+- System preference fallback enabled
 
-- `/api/products`
-- `/api/sales`
-- `/api/expenses`
-- `/api/categories`
-- `/api/brands`
-- `/api/models`
-- `/api/variants`
-- `/api/invoices/:id`
+## Forms and Validation
 
-### Reporting and Analytics
+Form stack:
 
-- `/api/reports/summary`
-- `/api/reports/quick-stats`
-- `/api/reports/low-stock`
-- `/api/reports/sales-trend`
-- `/api/reports/profit-trend`
-- `/api/reports/expense-distribution`
-- `/api/reports/export`
-- `/api/reports/schedule`
-- `/api/reports/schedules/*`
+- `react-hook-form`
+- `zod`
+- `@hookform/resolvers`
 
-### ML Proxy Endpoints
+Reusable schemas live in `src/lib/formSchemas.ts`:
 
-- `/api/ml/predictions/summary`
-- `/api/ml/predictions/forecast/:type`
-- `/api/ml/predictions/train`
-- `/api/ml/predictions/evaluate/:type`
-
-### User Preferences
-
-- `/api/users/profile`
-- `/api/users/preferences/reports`
-- `/api/users/:userId/preferences/reports` (owner)
-
-## Roles and Access Model
-
-The current role model in backend logic and schema:
-
-- `OWNER`
-- `ACCOUNTANT`
-- `STAFF`
-
-Role checks are enforced in route middleware via `backend/src/middleware/roleMiddleware.js`.
-
-## Data Model Summary
-
-Prisma models defined in `backend/prisma/schema.prisma` include:
-
-- User
-- Category
-- Brand
-- Model
-- Variant
-- Product
-- Sale
-- ExpenseCategory
-- Expense
-- AuditLog
-
-Design characteristics:
-
-- Soft delete support on major entities
-- Timestamp fields for lifecycle auditing
-- Foreign key relations with indexed access paths
-- User-linked creation trails for operational accountability
+- `LoginSchema`
+- `ProductSchema`
+- `SaleSchema`
+- `ExpenseSchema`
+- `CategorySchema`
+- `BrandSchema`
+- `VariantSchema`
+- `UserSchema`
 
 ## Testing and Quality Gates
 
-### Recommended pre-merge checks
+### Test Framework
+
+- Jest (`jest.config.cjs`)
+- ts-jest transform for TypeScript
+- jsdom test environment
+- Testing Library and jest-dom matchers
+
+### Coverage
+
+- Global thresholds configured at 50% (branches/functions/lines/statements)
+- Coverage command:
 
 ```bash
-# Root
-npm test
-
-# Backend
-cd backend
-npm run test:coverage
-
-# Frontend
-cd ../frontend
-npm run lint
-npm run build
 npm run test:coverage
 ```
 
-### Coverage thresholds in config
+### Recommended Local Gate
 
-- Backend jest threshold: 60% global branches/functions/lines/statements
-- Frontend jest threshold: 50% global branches/functions/lines/statements
+Run before merge:
 
-## Deployment Notes
+```bash
+npm run lint
+npx tsc --noEmit
+npm run build
+npm run test -- --watch=false
+```
 
-### Docker Compose stack
+## Performance and Build Notes
 
-`docker-compose.yml` defines:
+Build optimization in `vite.config.js` includes manual chunking for:
 
-- PostgreSQL
-- Redis
-- Nginx
-- Backend instances: `backend_1`, `backend_2`, `backend_3`
-- Frontend dev container
-- Backend test runner profile
+- React ecosystem
+- Query layer
+- Charts
+- Form libraries
+- Radix primitives
+- Axios
 
-### Nginx behavior
+This reduces initial payload pressure and improves caching behavior across deployments.
 
-`nginx.conf` currently provides:
+## Documentation Map
 
-- Upstream load balancing for backend instances
-- Rate limiting (`general_limit`, `auth_limit`)
-- Security headers
-- `/api/` and `/uploads/` proxying to backend upstream
-
-If you plan SPA-first production serving via Nginx root (`/`), review and adjust the current root location block for your target deployment model.
+- Design tokens and visual system: `docs/DESIGN_SYSTEM.md`
+- Refactor conventions: `docs/REFACTORING_GUIDE.md`
+- Component usage and structure: `src/components/README.md`
+- Refactor execution checklist: `Frontend_Refactor_ToDo.md`
 
 ## Troubleshooting
 
-### CORS failures in local dev
+### App redirects to login repeatedly
 
-If frontend runs on 5173 while backend allows only 5174, update `backend/.env`:
+- Remove stale auth keys in browser storage (`token`, `user`)
+- Re-authenticate and verify backend JWT settings
 
-```env
-CORS_ORIGINS=http://localhost:5173,http://localhost:5174
+### API requests fail in local development
+
+- Confirm backend server is running
+- Confirm `VITE_API_BASE_URL` is correct
+- Verify CORS configuration on backend
+
+### Styles look broken after dependency install
+
+- Ensure `src/index.css` imports remain intact:
+	- `tailwindcss`
+	- `tw-animate-css`
+	- `shadcn/tailwind.css`
+
+### Tests fail on browser API gaps
+
+- Verify mocks in `jest.setup.cjs` (for `matchMedia`, storage APIs)
+
+## Deployment
+
+### Build
+
+```bash
+cd frontend
+npm ci
+npm run build
 ```
 
-### Prisma engine issues in Alpine containers
+Build output: `frontend/dist/`
 
-The compose file sets `PRISMA_QUERY_ENGINE_LIBRARY` for linux-musl compatibility. Keep this value aligned with Prisma client output when upgrading Prisma.
+### Production Requirements
 
-### Login loop / unauthorized responses
+- Serve static `dist/` via Nginx or equivalent
+- Set `VITE_API_BASE_URL` at build time for target environment
+- Validate protected route behavior against real auth roles
 
-- Confirm `JWT_SECRET` is identical for all backend instances
-- Clear browser storage keys (`token`, `user`)
-- Re-authenticate
+## Contribution Workflow
 
-### Service startup delays in compose
-
-Backend containers install dependencies on startup (`npm install && npm start`). First boot may be slow.
-
-## Documentation Index
-
-- Frontend implementation guide: `frontend/README.md`
-- Frontend design system: `frontend/docs/DESIGN_SYSTEM.md`
-- Frontend refactor process: `frontend/docs/REFACTORING_GUIDE.md`
-- Component catalog: `frontend/src/components/README.md`
-- ML service guide: `ml-service/README.md`
-- Deployment notes: `PHASE_6_DEPLOYMENT.md`
-- Testing notes: `PHASE_7_TESTING.md`
-
-## Contributing
-
-1. Create a branch for your change.
-2. Keep updates scoped and testable.
-3. Run the quality checks relevant to changed services.
-4. Open a pull request with change summary and verification notes.
-
-## License
-
-Internal Infosys project. All rights reserved.
+1. Create a feature branch
+2. Implement scoped changes
+3. Run local quality gate commands
+4. Open PR with:
+	 - problem statement
+	 - change summary
+	 - screenshots for UI changes
+	 - test evidence
+5. Merge after review approval
 
 ---
 
-Last updated: 2026-04-06
+For backend architecture and API server details, see the repository-level README and backend documentation.

@@ -1,0 +1,86 @@
+/**
+ * Test: API Layer Verification
+ * Checks API client setup, endpoints, and error handling
+ */
+
+import { apiClient, apiPost, apiGet, endpoints, ApiError } from '@/services/api';
+import axios from 'axios';
+
+describe('API Layer Verification', () => {
+  test('API client should be initialized', () => {
+    expect(apiClient).toBeDefined();
+    expect(apiClient.defaults.baseURL).toBe('http://localhost:5000/api');
+    expect(apiClient.defaults.timeout).toBe(30000);
+  });
+
+  test('API endpoints object should have all required endpoints', () => {
+    expect(endpoints.auth).toBeDefined();
+    expect(endpoints.products).toBeDefined();
+    expect(endpoints.sales).toBeDefined();
+    expect(endpoints.expenses).toBeDefined();
+    expect(endpoints.categories).toBeDefined();
+    expect(endpoints.brands).toBeDefined();
+    expect(endpoints.variants).toBeDefined();
+    expect(endpoints.users).toBeDefined();
+    expect(endpoints.auditLogs).toBeDefined();
+    expect(endpoints.predictions).toBeDefined();
+    expect(endpoints.reports).toBeDefined();
+  });
+
+  test('Auth endpoints should be correct', () => {
+    expect(endpoints.auth.login).toBe('/auth/login');
+    expect(endpoints.auth.logout).toBe('/auth/logout');
+    expect(endpoints.auth.register).toBe('/auth/register');
+    expect(endpoints.auth.me).toBe('/auth/me');
+  });
+
+  test('Product endpoints should be correct', () => {
+    expect(endpoints.products.list).toBe('/products');
+    expect(endpoints.products.create).toBe('/products');
+    expect(endpoints.products.get(1)).toBe('/products/1');
+    expect(endpoints.products.update(5)).toBe('/products/5');
+    expect(endpoints.products.delete(10)).toBe('/products/10');
+  });
+
+  test('Sales endpoints should be correct', () => {
+    expect(endpoints.sales.list).toBe('/sales');
+    expect(endpoints.sales.get(1)).toBe('/sales/1');
+    expect(endpoints.sales.create).toBe('/sales');
+  });
+
+  test('Expenses endpoints should include upload', () => {
+    expect(endpoints.expenses.list).toBe('/expenses');
+    expect(endpoints.expenses.upload).toBe('/expenses/upload');
+  });
+
+  test('Request interceptor should add Authorization header', async () => {
+    // Mock localStorage
+    localStorage.setItem('token', 'test-token-12345');
+
+    const config = { headers: {} };
+    const interceptor = apiClient.interceptors.request.handlers[0];
+
+    if (interceptor && interceptor.fulfilled) {
+      const result = await (interceptor.fulfilled as any)(config);
+      expect(result.headers.Authorization).toBe('Bearer test-token-12345');
+    }
+
+    localStorage.removeItem('token');
+  });
+
+  test('API functions should be exported', () => {
+    expect(typeof apiGet).toBe('function');
+    expect(typeof apiPost).toBe('function');
+  });
+
+  test('API error structure should be correct', () => {
+    const error: ApiError = {
+      message: 'Not Found',
+      status: 404,
+      code: 'NOT_FOUND',
+      details: { entity: 'Product' },
+    };
+    expect(error.status).toBe(404);
+    expect(error.message).toBe('Not Found');
+  });
+});
