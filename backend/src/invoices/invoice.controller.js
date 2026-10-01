@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 const invoiceDir = path.join(__dirname, "../uploads/invoices");
 
 if (!fs.existsSync(invoiceDir)) {
-  fs.mkdirSync(invoiceDir);
+  fs.mkdirSync(invoiceDir, { recursive: true });
 }
 
 exports.downloadInvoice = async (req, res) => {
