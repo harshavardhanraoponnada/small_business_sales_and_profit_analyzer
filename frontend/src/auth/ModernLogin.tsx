@@ -17,7 +17,6 @@ import {
   AlertCircle,
   Moon,
   Sun,
-  ShieldCheck,
   ArrowLeft,
   CircleCheck,
   Sparkles,
@@ -299,14 +298,6 @@ export default function ModernLogin() {
             </motion.div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            className="flex items-center gap-3 text-sm font-bold text-slate-500 dark:text-slate-400"
-          >
-            <ShieldCheck size={16} className="text-emerald-500" /> SOC2 Type II Certified
-          </motion.div>
         </section>
 
         <section className="order-first lg:order-last flex flex-col items-center justify-center p-6 lg:p-12 relative w-full lg:h-full min-h-[100dvh] lg:min-h-0">
