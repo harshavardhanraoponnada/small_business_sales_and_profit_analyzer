@@ -28,9 +28,19 @@ pip install -r requirements.txt
 export FLASK_ENV=development
 export FLASK_PORT=5001
 
+# Production scheduler settings
+export DATABASE_URL=postgresql://user:password@host:5432/database
+export REPORT_SCHEDULER_TIMEZONE=Asia/Kolkata
+export REPORT_SCHEDULER_INSTANCE=ml-service-1
+export INSTANCE_ID=ml-service-1
+
 # Run
 python app.py
 ```
+
+For production, deploy with the included `Procfile`. It uses one Gunicorn worker
+because each worker can start a scheduler thread. Set `REPORT_SCHEDULER_ENABLED=false`
+on every instance that should serve the API but not execute scheduled jobs.
 
 ## API Endpoints
 

@@ -14,3 +14,4 @@ schedule==1.2.0
 python-dateutil==2.8.2
 matplotlib==3.7.1
 psycopg2-binary==2.9.9
+gunicorn

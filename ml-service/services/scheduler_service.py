@@ -14,6 +14,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 import uuid
+import psycopg2
+from zoneinfo import ZoneInfo
 
 from config.settings import Config
 from services.report_generator import ReportGenerator
@@ -24,15 +26,93 @@ class SchedulerService:
     
     def __init__(self):
         self.schedules_file = Config.SCHEDULES_FILE
+        self.database_url = os.getenv('DATABASE_URL')
+        self.timezone = os.getenv('REPORT_SCHEDULER_TIMEZONE', 'Asia/Kolkata')
+        self.instance_id = os.getenv('INSTANCE_ID', '')
+        self.scheduler_instance = os.getenv('REPORT_SCHEDULER_INSTANCE', '')
+        self.should_run = self._scheduler_is_enabled()
         self.schedules = {}
         self.scheduler_thread = None
         self.is_running = False
         self.report_generator = ReportGenerator()
         self.load_schedules()
+
+    def _scheduler_is_enabled(self):
+        """Run scheduled jobs only on the configured service instance."""
+        enabled = os.getenv('REPORT_SCHEDULER_ENABLED', 'true').lower() in ('1', 'true', 'yes', 'on')
+        if not enabled:
+            return False
+        return not self.scheduler_instance or self.instance_id == self.scheduler_instance
+
+    def _database_connection(self):
+        if not self.database_url:
+            return None
+        try:
+            return psycopg2.connect(self.database_url)
+        except Exception as error:
+            print(f"Database connection failed, using JSON fallback: {error}")
+            return None
+
+    def _ensure_database_table(self, connection):
+        with connection.cursor() as cursor:
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS ml_report_schedules (
+                    id TEXT PRIMARY KEY,
+                    schedule_data JSONB NOT NULL,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            ''')
+        connection.commit()
+
+    def _load_schedules_from_database(self):
+        connection = self._database_connection()
+        if connection is None:
+            return None
+        try:
+            self._ensure_database_table(connection)
+            with connection.cursor() as cursor:
+                cursor.execute('SELECT id, schedule_data FROM ml_report_schedules')
+                return {schedule_id: schedule_data for schedule_id, schedule_data in cursor.fetchall()}
+        except Exception as error:
+            print(f"Database schedule load failed, using JSON fallback: {error}")
+            return None
+        finally:
+            connection.close()
+
+    def _save_schedules_to_database(self):
+        connection = self._database_connection()
+        if connection is None:
+            return
+        try:
+            self._ensure_database_table(connection)
+            with connection.cursor() as cursor:
+                cursor.execute('DELETE FROM ml_report_schedules')
+                for schedule_id, schedule_data in self.schedules.items():
+                    cursor.execute(
+                        '''INSERT INTO ml_report_schedules (id, schedule_data)
+                           VALUES (%s, %s::jsonb)''',
+                        (schedule_id, json.dumps(schedule_data, default=str))
+                    )
+            connection.commit()
+        except Exception as error:
+            print(f"Database schedule save failed, keeping JSON fallback: {error}")
+        finally:
+            connection.close()
     
     def load_schedules(self):
         """Load scheduled reports from JSON file"""
         try:
+            database_schedules = self._load_schedules_from_database()
+            if database_schedules is not None:
+                if database_schedules:
+                    self.schedules = database_schedules
+                    return
+                if os.path.exists(self.schedules_file):
+                    with open(self.schedules_file, 'r') as schedules_file:
+                        self.schedules = json.load(schedules_file)
+                    if self.schedules:
+                        self._save_schedules_to_database()
+                return
             if os.path.exists(self.schedules_file):
                 with open(self.schedules_file, 'r') as f:
                     self.schedules = json.load(f)
@@ -43,6 +123,7 @@ class SchedulerService:
     def save_schedules(self):
         """Save scheduled reports to JSON file"""
         try:
+            self._save_schedules_to_database()
             os.makedirs(os.path.dirname(self.schedules_file), exist_ok=True)
             with open(self.schedules_file, 'w') as f:
                 json.dump(self.schedules, f, indent=2, default=str)
@@ -105,18 +186,18 @@ class SchedulerService:
             
             # Register job based on frequency
             if frequency == 'daily':
-                schedule.every().day.at("09:00").do(job_func).tag(schedule_id)
+                schedule.every().day.at("09:00", self.timezone).do(job_func).tag(schedule_id)
             elif frequency == 'weekly':
-                schedule.every().monday.at("09:00").do(job_func).tag(schedule_id)
+                schedule.every().monday.at("09:00", self.timezone).do(job_func).tag(schedule_id)
             elif frequency == 'monthly':
                 # Schedule for the 1st of each month
-                schedule.every().day.at("09:00").do(self._check_monthly, schedule_id, job_func).tag(schedule_id)
+                schedule.every().day.at("09:00", self.timezone).do(self._check_monthly, schedule_id, job_func).tag(schedule_id)
         except Exception as e:
             print(f"Error registering schedule: {e}")
     
     def _check_monthly(self, schedule_id, job_func):
         """Helper to run monthly schedules on the 1st of the month"""
-        if datetime.now().day == 1:
+        if datetime.now(ZoneInfo(self.timezone)).day == 1:
             job_func()
     
     def execute_scheduled_report(self, schedule_id, report_type, format, recipients):

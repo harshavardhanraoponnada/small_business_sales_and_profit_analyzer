@@ -2,25 +2,25 @@
   "models": {
     "expenses": {
       "status": "success",
-      "data_points": 91,
-      "date_range": "2025-01-01 to 2026-03-16",
+      "data_points": 37,
+      "date_range": "2026-04-04 to 2026-08-17",
       "metrics": {
-        "mape": 715.78,
-        "rmse": 13602.91,
-        "test_points": 19
+        "mape": 6068.99,
+        "rmse": 18936.48,
+        "test_points": 8
       },
-      "updated_at": "2026-03-16T17:02:24.533045"
+      "updated_at": "2026-08-18T17:58:35.432512"
     },
     "sales": {
       "status": "success",
-      "data_points": 379,
-      "date_range": "2025-01-01 to 2026-02-07",
+      "data_points": 37,
+      "date_range": "2026-04-03 to 2026-08-17",
       "metrics": {
-        "mape": 67.18,
-        "rmse": 696104.95,
-        "test_points": 76
+        "mape": 539.06,
+        "rmse": 8265.02,
+        "test_points": 8
       },
-      "updated_at": "2026-03-16T17:02:24.015225"
+      "updated_at": "2026-08-18T17:57:57.841585"
     }
   }
 }

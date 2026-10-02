@@ -56,15 +56,15 @@ class DatabaseLoader:
                 # Query to aggregate sales by date
                 query = """
                     SELECT 
-                        CAST(created_at AS DATE) as date,
-                        SUM(CAST(selling_price AS FLOAT) * quantity) as total
-                    FROM "Sales"
-                    WHERE deleted_at IS NULL
+                        CAST(date AS DATE) as date,
+                        SUM(CAST(total AS FLOAT)) as total
+                    FROM "Sale"
+                    WHERE is_deleted = false
                     {date_filter}
-                    GROUP BY CAST(created_at AS DATE)
+                    GROUP BY CAST(date AS DATE)
                     ORDER BY date ASC
                 """.format(
-                    date_filter=f"AND CAST(created_at AS DATE) >= CURRENT_DATE - INTERVAL '{days_back} days'" if days_back else ""
+                    date_filter=f"AND CAST(date AS DATE) >= CURRENT_DATE - INTERVAL '{days_back} days'" if days_back else ""
                 )
 
                 cur.execute(query)
@@ -109,15 +109,15 @@ class DatabaseLoader:
                 # Query to aggregate expenses by date
                 query = """
                     SELECT 
-                        CAST(created_at AS DATE) as date,
+                        CAST(date AS DATE) as date,
                         SUM(CAST(amount AS FLOAT)) as total
                     FROM "Expense"
-                    WHERE deleted_at IS NULL
+                    WHERE is_deleted = false
                     {date_filter}
-                    GROUP BY CAST(created_at AS DATE)
+                    GROUP BY CAST(date AS DATE)
                     ORDER BY date ASC
                 """.format(
-                    date_filter=f"AND CAST(created_at AS DATE) >= CURRENT_DATE - INTERVAL '{days_back} days'" if days_back else ""
+                    date_filter=f"AND CAST(date AS DATE) >= CURRENT_DATE - INTERVAL '{days_back} days'" if days_back else ""
                 )
 
                 cur.execute(query)

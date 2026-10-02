@@ -9,13 +9,12 @@ from datetime import datetime
 from functools import wraps
 
 from services.report_generator import ReportGenerator
-from services.scheduler_service import SchedulerService
 from config.settings import Config
 
 
 reports_bp = Blueprint('reports', __name__, url_prefix='/api/reports')
 report_generator = ReportGenerator()
-scheduler = SchedulerService()
+scheduler = None
 
 
 def validate_auth(f):

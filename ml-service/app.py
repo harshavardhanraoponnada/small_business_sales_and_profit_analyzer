@@ -2,6 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 from config.settings import config
 from routes.predictions import predictions_bp
+from routes import reports as reports_routes
 from routes.reports import reports_bp
 from services.scheduler_service import SchedulerService
 from dotenv import load_dotenv
@@ -35,7 +36,9 @@ def create_app(config_name='development'):
     
     # Initialize scheduler
     scheduler = SchedulerService()
-    scheduler.start_scheduler()
+    reports_routes.scheduler = scheduler
+    if scheduler.should_run:
+        scheduler.start_scheduler()
     
     # Register blueprints
     app.register_blueprint(predictions_bp)
@@ -43,8 +46,10 @@ def create_app(config_name='development'):
     
     return app
 
+
+app = create_app(os.getenv('FLASK_ENV', 'production'))
+
 if __name__ == '__main__':
-    app = create_app(os.getenv('FLASK_ENV', 'development'))
     port = int(os.getenv('FLASK_PORT', 5001))
     debug_mode = os.getenv('FLASK_DEBUG') == '1' or bool(app.config.get('DEBUG', False))
     app.run(host='0.0.0.0', port=port, debug=debug_mode)
