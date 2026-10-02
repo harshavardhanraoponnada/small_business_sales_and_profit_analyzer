@@ -69,6 +69,18 @@ describe('Category Controller', () => {
     expect(mockAuditService.logAction).toHaveBeenCalled();
   });
 
+  it('addCategory rejects case-insensitive duplicate names', async () => {
+    mockPrisma.category.findMany.mockResolvedValue([{ id: 'c1' }]);
+
+    const req = { body: { name: ' mobiles ' }, user: { id: 'u1' } };
+    const res = createMockRes();
+
+    await controller.addCategory(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(mockPrisma.category.create).not.toHaveBeenCalled();
+  });
+
   it('updateCategory returns 404 when category not found', async () => {
     mockPrisma.category.findUnique.mockResolvedValue(null);
 
@@ -83,6 +95,7 @@ describe('Category Controller', () => {
 
   it('updateCategory updates and returns category', async () => {
     mockPrisma.category.findUnique.mockResolvedValue({ id: 'c1', name: 'Old' });
+    mockPrisma.category.findMany.mockResolvedValue([]);
     mockPrisma.category.update.mockResolvedValue({ id: 'c1', name: 'New' });
 
     const req = { params: { id: 'c1' }, body: { name: 'New' }, user: { id: 'u1' } };
@@ -117,6 +130,25 @@ describe('Category Controller', () => {
 
     expect(mockPrisma.category.update).toHaveBeenCalledWith({ where: { id: 'c1' }, data: { is_deleted: true } });
     expect(res.json).toHaveBeenCalledWith({ message: 'Category deleted successfully', categoryId: 'c1' });
+  });
+
+  it('deleteCategory blocks categories assigned to products', async () => {
+    mockPrisma.category.findUnique.mockResolvedValue({
+      id: 'c1',
+      name: 'Mobiles',
+      _count: { products: 2 },
+    });
+
+    const req = { params: { id: 'c1' }, user: { id: 'u1' } };
+    const res = createMockRes();
+
+    await controller.deleteCategory(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Cannot delete this category while 2 product(s) are assigned to it. Reassign the products first.',
+    });
+    expect(mockPrisma.category.update).not.toHaveBeenCalled();
   });
 
   it('restoreCategory restores category', async () => {

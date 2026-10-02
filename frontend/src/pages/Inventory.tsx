@@ -142,6 +142,20 @@ const parseCategoryName = (rawProduct: Record<string, unknown>) => {
   return categoryName || 'Uncategorized';
 };
 
+const parseCategoryId = (rawProduct: Record<string, unknown>) => {
+  const directId = normalizeText(rawProduct.category_id || rawProduct.categoryId);
+  if (directId) {
+    return directId;
+  }
+
+  const category = rawProduct.category;
+  if (category && typeof category === 'object') {
+    return normalizeText((category as Record<string, unknown>).id);
+  }
+
+  return '';
+};
+
 const parseReorderLevel = (rawProduct: Record<string, unknown>) => {
   const directValue = toFiniteNumber(rawProduct.reorder_level ?? rawProduct.reorderLevel);
   if (directValue > 0) {
@@ -357,6 +371,7 @@ export default function Inventory() {
           sku,
           name,
           brand,
+          category_id: parseCategoryId(rawProduct),
           category_name: parseCategoryName(rawProduct),
           stock: toFiniteNumber(rawProduct.stock),
           reorder_level: parseReorderLevel(rawProduct),
@@ -372,6 +387,10 @@ export default function Inventory() {
     const query = search.trim().toLowerCase();
 
     return products.filter((product) => {
+      if (traversalCategoryId && product.category_id !== traversalCategoryId) {
+        return false;
+      }
+
       if (lowStockOnly && Number(product.stock || 0) >= LOW_STOCK_THRESHOLD) {
         return false;
       }
@@ -387,7 +406,7 @@ export default function Inventory() {
         product.category_name.toLowerCase().includes(query)
       );
     });
-  }, [products, search, lowStockOnly]);
+  }, [products, search, lowStockOnly, traversalCategoryId]);
 
   const pagedProducts = useMemo(() => {
     const start = (page - 1) * ITEMS_PER_PAGE;
@@ -542,7 +561,7 @@ export default function Inventory() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, lowStockOnly]);
+  }, [search, lowStockOnly, traversalCategoryId]);
 
   useEffect(() => {
     setVariantSearch('');

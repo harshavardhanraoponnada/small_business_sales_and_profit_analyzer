@@ -10,6 +10,7 @@ exports.getCategories = async (req, res) => {
     const categories = await prisma.category.findMany({
       where,
       orderBy: { created_at: 'desc' },
+      include: { _count: { select: { products: true } } },
     });
     
     res.json(categories);
@@ -20,9 +21,19 @@ exports.getCategories = async (req, res) => {
 
 exports.addCategory = async (req, res) => {
   try {
+    const name = String(req.body.name || '').trim();
+    const existing = (await prisma.category.findMany({
+      where: { name: { equals: name, mode: 'insensitive' } },
+      select: { id: true },
+    })) || [];
+
+    if (existing.length) {
+      return res.status(409).json({ message: 'A category with this name already exists' });
+    }
+
     const newCategory = await prisma.category.create({
       data: {
-        name: req.body.name,
+        name,
         is_deleted: false,
       },
     });
@@ -36,6 +47,9 @@ exports.addCategory = async (req, res) => {
     
     res.status(201).json(newCategory);
   } catch (error) {
+    if (error?.code === 'P2002') {
+      return res.status(409).json({ message: 'A category with this name already exists' });
+    }
     res.status(500).json({ message: "Failed to add category", error: error.message });
   }
 };
@@ -50,9 +64,19 @@ exports.updateCategory = async (req, res) => {
       return res.status(404).json({ message: "Category not found" });
     }
 
+    const name = String(req.body.name || '').trim();
+    const duplicate = (await prisma.category.findMany({
+      where: { name: { equals: name, mode: 'insensitive' }, NOT: { id: req.params.id } },
+      select: { id: true },
+    })) || [];
+
+    if (duplicate.length) {
+      return res.status(409).json({ message: 'A category with this name already exists' });
+    }
+
     const updatedCategory = await prisma.category.update({
       where: { id: req.params.id },
-      data: req.body,
+      data: { name },
     });
     
     // Log the action
@@ -64,6 +88,9 @@ exports.updateCategory = async (req, res) => {
 
     res.json(updatedCategory);
   } catch (error) {
+    if (error?.code === 'P2002') {
+      return res.status(409).json({ message: 'A category with this name already exists' });
+    }
     res.status(500).json({ message: "Failed to update category", error: error.message });
   }
 };
@@ -72,10 +99,18 @@ exports.deleteCategory = async (req, res) => {
   try {
     const category = await prisma.category.findUnique({
       where: { id: req.params.id },
+      include: { _count: { select: { products: true } } },
     });
 
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
+    }
+
+    const productCount = category._count?.products || category.products?.length || 0;
+    if (productCount > 0) {
+      return res.status(409).json({
+        message: `Cannot delete this category while ${productCount} product(s) are assigned to it. Reassign the products first.`,
+      });
     }
 
     // Soft delete - mark as deleted

@@ -3,6 +3,7 @@ export interface InventoryProduct {
   sku: string;
   name: string;
   brand: string;
+  category_id: string;
   category_name: string;
   stock: number;
   reorder_level: number;

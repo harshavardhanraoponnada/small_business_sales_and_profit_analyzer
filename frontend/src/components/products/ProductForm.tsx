@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { AppButton, AppInput, AppSelect } from '@/components/ui';
 import { useForm, useFormErrors } from '@/hooks';
+import CategoryManagementModal from './CategoryManagementModal';
 
 interface CategoryItem {
   id: string;
@@ -64,6 +65,12 @@ export default function ProductForm({
   onSubmit,
   onCancel,
 }: ProductFormProps) {
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [availableCategories, setAvailableCategories] = useState(categories);
+
+  useEffect(() => {
+    setAvailableCategories(categories);
+  }, [categories]);
   const { methods, handleSubmit } = useForm<ProductFormValues>({
     schema: schema as any,
     onSubmit: async (values) => {
@@ -129,8 +136,8 @@ export default function ProductForm({
   }, [filteredBrands]);
 
   const categoryOptions = useMemo(
-    () => categories.map((category) => ({ label: category.name, value: category.id })),
-    [categories]
+    () => availableCategories.map((category) => ({ label: category.name, value: category.id })),
+    [availableCategories]
   );
 
   return (
@@ -166,20 +173,31 @@ export default function ProductForm({
       </div>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <Controller
-          control={methods.control}
-          name="category_id"
-          render={({ field }) => (
-            <AppSelect
-              label="Category"
-              required
-              value={field.value}
-              onChange={(value) => field.onChange(String(value))}
-              options={categoryOptions}
-              error={getError('category_id')}
-            />
-          )}
-        />
+        <div>
+          <Controller
+            control={methods.control}
+            name="category_id"
+            render={({ field }) => (
+              <AppSelect
+                label="Category"
+                required
+                value={field.value}
+                onChange={(value) => field.onChange(String(value))}
+                options={categoryOptions}
+                error={getError('category_id')}
+              />
+            )}
+          />
+          {mode === 'add' ? (
+            <button
+              type="button"
+              className="mt-1 text-sm font-medium text-sky-700 hover:underline dark:text-sky-300"
+              onClick={() => setIsCategoryModalOpen(true)}
+            >
+              + Create Category
+            </button>
+          ) : null}
+        </div>
 
         <Controller
           control={methods.control}
@@ -197,6 +215,16 @@ export default function ProductForm({
           )}
         />
       </div>
+
+      <CategoryManagementModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        onCreated={(category) => {
+          setAvailableCategories((previous) => [...previous.filter((item) => item.id !== category.id), category]);
+          methods.setValue('category_id', category.id, { shouldDirty: true, shouldValidate: true });
+          setIsCategoryModalOpen(false);
+        }}
+      />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <Controller

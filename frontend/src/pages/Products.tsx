@@ -14,6 +14,7 @@ import {
 } from '@/hooks';
 import {
   ProductCard,
+  CategoryManagementModal,
   ProductsHeader,
   ProductsModal,
   ProductsTable,
@@ -67,6 +68,7 @@ export default function Products() {
   const [page, setPage] = useState(1);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [modalState, setModalState] = useState<ModalState>({ isOpen: false, mode: 'add' });
+  const [isCategoryManagementOpen, setIsCategoryManagementOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isDeletingSelected, setIsDeletingSelected] = useState(false);
   const [notification, setNotification] = useState<NotificationState>(null);
@@ -439,6 +441,7 @@ export default function Products() {
           }}
           onRefresh={handleRefresh}
           onAddClick={() => setModalState({ isOpen: true, mode: 'add' })}
+          onManageCategoriesClick={() => setIsCategoryManagementOpen(true)}
           onViewModeChange={setViewMode}
           onExport={handleExportCsv}
           onBulkDelete={handleBulkDelete}
@@ -505,6 +508,11 @@ export default function Products() {
         loading={createProduct.isPending || updateProduct.isPending}
         onClose={() => setModalState({ isOpen: false, mode: 'add' })}
         onSave={handleSaveProduct}
+      />
+
+      <CategoryManagementModal
+        isOpen={isCategoryManagementOpen}
+        onClose={() => setIsCategoryManagementOpen(false)}
       />
     </PageContainer>
   );

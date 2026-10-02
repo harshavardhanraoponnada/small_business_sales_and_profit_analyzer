@@ -1,4 +1,4 @@
-import { Grid3X3, List, PackagePlus, RefreshCw, Trash2 } from 'lucide-react';
+import { FolderCog, Grid3X3, List, PackagePlus, RefreshCw, Trash2 } from 'lucide-react';
 import { AppButton, AppSelect, SearchInput } from '@/components/ui';
 
 interface OptionItem {
@@ -23,6 +23,7 @@ interface ProductsHeaderProps {
   onClearFilters: () => void;
   onRefresh: () => void;
   onAddClick: () => void;
+  onManageCategoriesClick: () => void;
   onViewModeChange: (mode: 'table' | 'grid') => void;
   onExport: () => void;
   onBulkDelete: () => void;
@@ -45,6 +46,7 @@ export default function ProductsHeader({
   onClearFilters,
   onRefresh,
   onAddClick,
+  onManageCategoriesClick,
   onViewModeChange,
   onExport,
   onBulkDelete,
@@ -116,10 +118,16 @@ export default function ProductsHeader({
         ) : null}
 
         <div className="ml-auto">
-          <AppButton variant="primary" size="sm" onClick={onAddClick}>
-            <PackagePlus size={14} />
-            Add Product
-          </AppButton>
+          <div className="flex flex-wrap justify-end gap-2">
+            <AppButton variant="outline" size="sm" onClick={onManageCategoriesClick}>
+              <FolderCog size={14} />
+              Manage Categories
+            </AppButton>
+            <AppButton variant="primary" size="sm" onClick={onAddClick}>
+              <PackagePlus size={14} />
+              Add Product
+            </AppButton>
+          </div>
         </div>
       </div>
     </div>
