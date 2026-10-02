@@ -38,6 +38,14 @@ ml-service/venv/
 ml-service/**/__pycache__/
 ml-service/**/*.py[cod]
 
+# Generated runtime and test output
+backend/src/uploads/invoices/*.pdf
+ml-service/generated_reports/*
+!ml-service/generated_reports/.gitkeep
+coverage/
+coverage-final.json
+*.lcov
+
 # Environment variables and secrets
 ml-service/.env
 ml-service/**/.env
